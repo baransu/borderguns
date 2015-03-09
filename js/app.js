@@ -10,11 +10,15 @@ var player;
 var speed = 320;
 var bulletsSpeed = 1200;
 var keyInterval;
-var mousePressed = false;
+var mouseLeftPressed = false;
+var mouseRightPressed = false;
 var bullets = [];
 
-var timer = 0;
-var cooldown = 0.1;
+var bulletTimer = 0;
+var bulletCooldown = 0.1;
+
+var meleeAttackTimer = 0;
+var meleeAttackCooldown = 0.5;
 
 var collide = false;
 
@@ -41,9 +45,10 @@ var nSizeY = 1080/pathfindingNodesScale;
 
 var pathfindingGraph;
 
-var AIWallOffset = 2;
+var AIWallOffsetL1 = 2;
+var AIWallOffsetL2 = 1
 
-var gizomos = false;
+var gizomos = true;
 var inputTimer = 0;
 var inputCooldown = 0.3;
 
@@ -78,6 +83,10 @@ var playerInput = true;
 var postE = false;
 
 var toPointOffset = 2 * pathfindingNodesScale
+
+var playerAlive = true;
+
+var meleeRange = 75;
 // * Math.sqrt(2);
 
 // function to initizalize whole game
@@ -92,12 +101,29 @@ function init(){
 	}, false);
 
 	document.addEventListener('mousedown', function(e){
-		mousePressed = true;
+		switch (event.which) {
+	        case 1:
+	       		mouseLeftPressed = true;
+	            break;
+	        case 2:
+	            //middle mouse button pressed
+	            break;
+	        case 3:
+	            mouseRightPressed = true;
+	            break;
+	        default:
+	            break;
+    	}
 	}, false);
 
 	document.addEventListener('mouseup', function(e){
-		mousePressed = false;
+		mouseLeftPressed = false;
+		mouseRightPressed = false;
 	}, false);
+
+	document.addEventListener('contextmenu', function(e){
+		e.preventDefault();
+	}, false);	
 
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
@@ -171,11 +197,12 @@ function init(){
 		}
 	}
 
+	//adding hight values to pathfinding near walls
 	for(var a = 0; a < nSizeX; a++){
 		for(var b = 0; b < nSizeY; b++){
 			if(pathfindingNodes[a][b] == 0){
-				for (var xx = -AIWallOffset; xx <= AIWallOffset; xx++) {
-                    for (var yy = -AIWallOffset; yy <= AIWallOffset; yy++) {
+				for (var xx = -AIWallOffsetL1; xx <= AIWallOffsetL1; xx++) {
+                    for (var yy = -AIWallOffsetL1; yy <= AIWallOffsetL1; yy++) {
                         var pom1 = xx + a;
                         var pom2 = yy + b;
                         
@@ -187,6 +214,25 @@ function init(){
 			}
 		}
 	}
+
+	//adding lesser (but higher than normal) values to pathfinding 
+	for(var a = 0; a < nSizeX; a++){
+		for(var b = 0; b < nSizeY; b++){
+			if(pathfindingNodes[a][b] == 0){
+				for (var xx = -AIWallOffsetL2; xx <= AIWallOffsetL2; xx++) {
+                    for (var yy = -AIWallOffsetL2; yy <= AIWallOffsetL2; yy++) {
+                        var pom1 = xx + a;
+                        var pom2 = yy + b;
+                        
+                        if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
+                            pathfindingNodes[pom1][pom2] = 5;
+
+                    }
+                }
+			}
+		}
+	}
+
 
 	doorsData[0] = {
 		pos: new SAT.Vector(1,1),
@@ -279,13 +325,26 @@ function update(deltaTime){
 		doors[a].exist(deltaTime);
 	}
 
+	//enemies melee range
+	for(var a = 0; a < enemies.length; a++){
+		var toEnemy = Math.sqrt(Math.pow((enemies[a].collider.pos.x - player.collider.pos.x),2) + Math.pow((enemies[a].collider.pos.y - player.collider.pos.y),2));
+		if(toEnemy < meleeRange && mouseLeftPressed && meleeAttackTimer === 0) {
+			enemies[a].die = true;
+			meleeAttackTimer = meleeAttackCooldown;
+		}
+	}
+
+	if(mouseLeftPressed && meleeAttackTimer === 0){
+		meleeAttackTimer = meleeAttackCooldown;
+	}
+
 	mouseToPlayerAngle = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
 
-	if(mousePressed && timer === 0){
+	if(mouseRightPressed && bulletTimer === 0 && playerInput){
 		var temp = new SAT.Vector((mouse.x - CANVASW/2), (mouse.y - CANVASH/2));
 		temp.normalize();
 		bullets.push(new Bullet(bullet, player.collider.pos.x, player.collider.pos.y, 5, bulletsSpeed, new SAT.Vector(temp.x, temp.y)));
-		timer = cooldown;
+		bulletTimer = bulletCooldown;
 	}
 
 	//calculating bullets
@@ -300,10 +359,13 @@ function update(deltaTime){
 		calcGradient = true;
 	}
 
-	if(timer > 0) timer -= deltaTime;
-	if(timer < 0) timer = 0;
+	if(bulletTimer > 0) bulletTimer -= deltaTime;
+	if(bulletTimer < 0) bulletTimer = 0;
 	if(bgGradient > 0) bgGradient -= deltaTime;
 	if(bgGradient < 0) bgGradient = 0;
+
+	if(meleeAttackTimer > 0) meleeAttackTimer -= deltaTime;
+	if(meleeAttackTimer < 0) meleeAttackTimer = 0;
 	
 };
 // function to render everything
@@ -335,7 +397,7 @@ function render(){
 
 		  
 		step += gradientSpeed;
-		if ( step >= 1 ){
+		if (step >= 1){
 			step %= 1;
 			colorIndices[0] = colorIndices[1];
 			colorIndices[2] = colorIndices[3];
@@ -363,6 +425,8 @@ function render(){
 					ctx.strokeStyle = "magenta"
 				else if(pathfindingNodes[a][b] == 2)
 					ctx.strokeStyle = "teal";
+				else if(pathfindingNodes[a][b] == 5)
+					ctx.strokeStyle = "maroon";
 				else
 					ctx.strokeStyle = "black";
 
@@ -562,6 +626,17 @@ function Bullet(img, x, y, radius, speed, deltaV){
 Bullet.prototype.exist = function(deltaTime, id){
 	this.collider.pos.x += this.deltaV.x * this.speed * deltaTime;
 	this.collider.pos.y += this.deltaV.y * this.speed * deltaTime;
+	
+	for(var a = 0; a < enemies.length; a++){
+
+		var col = SAT.testCircleCircle(enemies[a].collider, this.collider);
+		
+		if(col){
+			enemies[a].die = true;
+			bullets.splice(id, 1);
+			break;
+		}
+	}
 
 	for(var a = 0; a < obstacles.length; a++){
 
@@ -583,6 +658,8 @@ Bullet.prototype.exist = function(deltaTime, id){
 		}
 	}
 
+	
+
 	if(this.collider.pos.x < 0 || this.collider.pos.y < 0 || this.collider.pos.x > 2000 || this.collider.pos.y > 2000){
 		bullets.splice(id, 1);
 		return;
@@ -594,8 +671,8 @@ Bullet.prototype.draw = function(){
 function Enemy(img, x, y, radius, waypoints){
 	this.img = img;
 	this.radius = radius;
-	this.normalSpeed = 2.5;
-	this.followPlayerSpeed = 4;
+	this.normalSpeed = 2;
+	this.followPlayerSpeed = 5;
 	this.collider = new SAT.Circle(new SAT.Vector(x,y), radius);
 	this.isHeavy = false;
 	this.angle = 0;
@@ -616,8 +693,6 @@ function Enemy(img, x, y, radius, waypoints){
 	this.toNodes = new SAT.Vector();
 	this.path = null;
 
-	this.meleeRange = 40;
-
 	this.lastPlayerPos = new SAT.Vector();
 	this.lastPlayerPos = player.toNode();
 
@@ -631,10 +706,19 @@ function Enemy(img, x, y, radius, waypoints){
 
 	this.lastDeltaV = new SAT.Vector();
 
+	this.attackTimer = 0;
+	this.attackLagTimer = 0;
+	this.attackLag = 0.5;
+	this.attackCooldown = 1;;
+
+	this.attack = false;
+
+	this.canAttack = false;
+
+	this.die = false;
+
 };
 Enemy.prototype.exist = function(deltaTime, id){
-
-//waypoint(x,y, timetowait in waypoint) in array
 
 	if(!this.isKnockBack){
 		if(this.waypoints != null && this.useWaypoints){
@@ -654,84 +738,85 @@ Enemy.prototype.exist = function(deltaTime, id){
 			this.deltaV = new SAT.Vector(deltaX, deltaY).normalize();
 			this.deltaV.scale(this.normalSpeed)
 
-			this.state = "using waypoints"
-
 		}
 
 		//make angle
 		this.angle = makeAngle(this.collider.pos.x, this.forward.x, this.collider.pos.y, this.forward.y)
 
-		//look for player
-		var toPlayerX = player.collider.pos.x - this.collider.pos.x;
-		var toPlayerY = -(player.collider.pos.y - this.collider.pos.y);
-		var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+		if(playerAlive){
+			//look for player
+			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
+			var toPlayerY = -(player.collider.pos.y - this.collider.pos.y);
+			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
 
-		if(toPlayer <= this.radarLength){
+			if(toPlayer <= this.radarLength){
 
-			var toPointX = this.forward.x - this.collider.pos.x;
-			var toPointY = -(this.forward.y - this.collider.pos.y);
+				var toPointX = this.forward.x - this.collider.pos.x;
+				var toPointY = -(this.forward.y - this.collider.pos.y);
 
-			var dot = (toPointX * toPlayerX) + (toPointY * toPlayerY);
+				var dot = (toPointX * toPlayerX) + (toPointY * toPlayerY);
 
-			var toPoint = Math.sqrt(Math.pow(toPointX,2) + Math.pow(toPointY,2))
+				var toPoint = Math.sqrt(Math.pow(toPointX,2) + Math.pow(toPointY,2))
 
-			var cos = dot/(toPoint*toPlayer);
+				var cos = dot/(toPoint*toPlayer);
 
-			var acos = Math.acos(cos);
+				var acos = Math.acos(cos);
 
-			if(acos < Math.PI/2){
+				if(acos < Math.PI/2){
 
-				this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),[
-					new SAT.Vector(),
-					new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
-					new SAT.Vector(player.collider.pos.x - this.collider.pos.x + 20, player.collider.pos.y - this.collider.pos.y + 20),
-					new SAT.Vector(20,20),
-				]);
+					this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),[
+						new SAT.Vector(),
+						new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
+						new SAT.Vector(player.collider.pos.x - this.collider.pos.x + 20, player.collider.pos.y - this.collider.pos.y + 20),
+						new SAT.Vector(20,20),
+					]);
 
-				var obstaclesCol = true;
-				var obstaclesCount = 0;
-				for(var a = 1; a < obstacles.length; a++){
-					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon())
-					if(this.toPlayerCollision) {
-						break;					
+					var obstaclesCol = true;
+					var obstaclesCount = 0;
+					for(var a = 1; a < obstacles.length; a++){
+						this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon())
+						if(this.toPlayerCollision) {
+							break;					
+						}
+						else{
+							obstaclesCount++;						
+						}
+					}
+
+					if(obstaclesCount == obstacles.length - 1)
+						obstaclesCol = false;
+
+					var doorCol = true;
+					var doorCount = 0;
+					for(var a = 1; a < doors.length; a++){
+						this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, doors[a].collider)
+						if(this.toPlayerCollision) {
+							break;					
+						}
+						else{
+							doorCount++;
+						}
+					}
+					if(doorCount == doors.length - 1)
+						doorCol = false;
+
+					if(!obstaclesCol && !doorCol){
+						this.playerIsInRange = true;
 					}
 					else{
-						obstaclesCount++;						
+						this.playerIsInRange = false;
 					}
 				}
 
-				if(obstaclesCount == obstacles.length - 1)
-					obstaclesCol = false;
-
-				var doorCol = true;
-				var doorCount = 0;
-				for(var a = 1; a < doors.length; a++){
-					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, doors[a].collider)
-					if(this.toPlayerCollision) {
-						break;					
-					}
-					else{
-						doorCount++;
-					}
-				}
-				if(doorCount == doors.length - 1)
-					doorCol = false;
-
-				if(!obstaclesCol && !doorCol){
-					this.playerIsInRange = true;
-				}
-				else{
-					this.playerIsInRange = false;
-				}
 			}
-
 		}
+		
 
 		//follow player
 		if(this.playerIsInRange){
-
+			this.state = "follow player"
 			this.useWaypoints = false;
-			
+			this.backToWaypoint = false;
 			this.toNodes = this.toNode(this.collider.pos)
 
 			this.lastPlayerPos = player.toNode();
@@ -741,28 +826,26 @@ Enemy.prototype.exist = function(deltaTime, id){
 			this.deltaV = this.deltaFromPath();		
 			this.deltaV.scale(this.followPlayerSpeed);
 
-			this.state = "following player"
-
 		}
 
+		//moving to player last pos
 		if(!this.playerIsInRange && !this.useWaypoints && !this.backToWaypoint){
 
+			this.state = "moving to player last pos"
 			var toPlayerLast = Math.sqrt(Math.pow(((this.lastPlayerPos.x * pathfindingNodesScale) - this.collider.pos.x),2) + Math.pow(((this.lastPlayerPos.y * pathfindingNodesScale) - this.collider.pos.y),2));	
 		
-			if(toPlayerLast <= toPointOffset && !this.backToWaypoint)
+			if(toPlayerLast <= toPointOffset)
 				this.backToWaypoint = true;
 
 			this.deltaV = this.deltaFromPath();		
 			this.deltaV.scale(this.followPlayerSpeed);
-
-			this.state = "lost player but going to last pos"
 
 		}
 
 
 		//back to waypoint system
 		if(!this.playerIsInRange && this.backToWaypoint && !this.useWaypoints){
-
+			this.state = "back to waypoint system"
 			var toCur = Math.sqrt(Math.pow((this.waypoints[this.curWay].x - this.collider.pos.x),2) + Math.pow((this.waypoints[this.curWay].y - this.collider.pos.y),2));	
 			
 			if(toCur <= toPointOffset){
@@ -779,7 +862,6 @@ Enemy.prototype.exist = function(deltaTime, id){
 			this.deltaV = this.deltaFromPath();		
 			this.deltaV.scale(this.normalSpeed);
 
-			this.state = "going back to waypoint system"
 		}
 
 
@@ -787,13 +869,30 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 		//got ya
 		if(meleeContact){
-
-			levelRestart();
-
-			this.playerIsInRange = false;
+			
+			if(this.attackLagTimer == 0)
+				this.attackLagTimer = this.attackLag;
+			
 			this.deltaV = new SAT.Vector();
+
+			this.canAttack = true;
 		}
 
+		if(this.attack && this.attackTimer === 0){
+			var toPlayerLength = Math.sqrt(Math.pow((player.collider.pos.x - this.collider.pos.x),2) + Math.pow((player.collider.pos.y - this.collider.pos.y),2));	
+			
+			if(toPlayerLength < meleeRange){
+				playerAlive = false;
+				playerInput = false;
+
+				this.playerIsInRange = false;
+				this.backToWaypoint = true;
+				this.useWaypoints = false;
+				this.attack = false;
+				this.canAttack = false;
+				this.attackTimer = this.attackCooldown;
+			}
+		}
 
 		this.collisionCheck();
 	
@@ -803,21 +902,29 @@ Enemy.prototype.exist = function(deltaTime, id){
 		this.forward.x = this.collider.pos.x + this.deltaV.x;
 		this.forward.y = this.collider.pos.y + this.deltaV.y;
 
-	}
+	}	
 
-	if(this.isKnockBack)
-		this.state = "knockback"
-	
+
+	//enemy death
+	if(this.die)
+		enemies.splice(id, 1);
+
+
+
 
 	if(this.knockBackTimer > 0) this.knockBackTimer -= deltaTime;
 	if(this.knockBackTimer < 0) this.knockBackTimer = 0;
 	if(this.knockBackTimer === 0) this.isKnockBack = false;
 
-	if(this.path != null){
-		console.log(this.path.length)
-	}
+	if(this.attackLagTimer > 0) this.attackLagTimer -= deltaTime;
+	if(this.attackLagTimer < 0) this.attackLagTimer = 0;
+	if(this.attackLagTimer === 0 && this.canAttack) this.attack = true;
+
+	if(this.attackTimer > 0) this.attackTimer -= deltaTime;
+	if(this.attackTimer < 0) this.attackTimer = 0;
 
 	//console.log(this.state);
+
 //lost player and back to last waypoint after losing player
 
 //see player player -> set bool for follow to true
@@ -837,6 +944,10 @@ Enemy.prototype.knockBack = function(response){
 		this.knockBackTimer = 3.14;	
 		this.isKnockBack = true;
 		this.backToWaypoint = true;	
+		this.attackTimer = 0;
+		this.attackLagTimer = 0;
+		this.attack = false;
+		this.canAttack = false;
 	}
 
 };
@@ -866,6 +977,7 @@ Enemy.prototype.deltaFromPath = function(){
 
 	if(this.path[this.curPath + 1] != undefined){
 
+		
 		var curEnemyXTemp = this.path[this.curPath].x * pathfindingNodesScale;
 		var curEnemyYTemp = this.path[this.curPath].y * pathfindingNodesScale;
 
@@ -875,16 +987,19 @@ Enemy.prototype.deltaFromPath = function(){
 		var toCurLng = Math.sqrt(Math.pow((this.collider.pos.x - curEnemyXTemp),2) + Math.pow((this.collider.pos.y - curEnemyYTemp),2));
 		var toNextLng = Math.sqrt(Math.pow((this.collider.pos.x - nextEnemyXTemp),2) + Math.pow((this.collider.pos.y - nextEnemyYTemp),2));
 
-		if(toCurLng >= toNextLng)
-			this.curPath++;	
 		
 		var deltaX = (this.path[this.curPath + 1].x * pathfindingNodesScale + pathfindingNodesScale/2) - this.collider.pos.x;
 		var deltaY = (this.path[this.curPath + 1].y * pathfindingNodesScale + pathfindingNodesScale/2) - this.collider.pos.y;
 		
+		if(toCurLng >= toNextLng)
+			this.curPath++;	
+		
+		this.lastDeltaV = new SAT.Vector(deltaX, deltaY).normalize();
 		return new SAT.Vector(deltaX, deltaY).normalize();
+
 	}
 	else{
-		return new SAT.Vector();
+		return this.lastDeltaV;
 	}
 
 };
@@ -946,11 +1061,13 @@ function Door(x,y,width, height, angle, img){
 	this.len2 = 0;
 
 	this.move = false;
-	this.fromPlayer = true;
+	this.fromPlayer = false;
 
 	this.collider.rotate(0,0, angle)
 
 	this.angle = 0;
+
+
 
 }
 Door.prototype.exist = function(deltaTime){
@@ -974,11 +1091,11 @@ Door.prototype.exist = function(deltaTime){
 			this.len1 = Math.sqrt(Math.pow((player.collider.pos.x - temp1X),2) + Math.pow((player.collider.pos.y - temp1Y),2));
 			this.len2 = Math.sqrt(Math.pow((player.collider.pos.x - temp2X),2) + Math.pow((player.collider.pos.y - temp2Y),2));		
 			this.move = true;
-			this.doorTimer = doorCooldown
+			this.doorTimer = doorCooldown;
+			this.fromPlayer = true;
 		}
 		else{
 			this.move = false;
-			this.fromPlayer = false;
 		}
 
 		if(this.doorTimer > 0 || this.move){
@@ -987,7 +1104,6 @@ Door.prototype.exist = function(deltaTime){
 
 				var col = SAT.testPolygonPolygon(this.collider, obstacles[a].toPolygon())	
 				if(col){
-					this.fromPlayer = false
 					this.tempAngle = -this.tempAngle;
 					if(this.len1 > this.len2){
 						this.collider.rotate(0 - 5,0, (this.collider.angle + this.tempAngle) * deltaTime * this.doorTimer);
@@ -995,18 +1111,6 @@ Door.prototype.exist = function(deltaTime){
 					else{
 						this.collider.rotate(0 - 5,0, (this.collider.angle - this.tempAngle) * deltaTime * this.doorTimer);
 					}
-				}
-				else{
-					this.fromPlayer = true;					
-				}
-			}
-			
-			if(this.fromPlayer){
-				if(this.len1 > this.len2){
-					this.collider.rotate(0 - 5,0, (this.collider.angle + this.tempAngle) * deltaTime * 5 * this.doorTimer);
-				}
-				else{
-					this.collider.rotate(0 - 5,0, (this.collider.angle - this.tempAngle) * deltaTime * 5 * this.doorTimer);
 				}
 			}
 		}
@@ -1057,11 +1161,17 @@ Door.prototype.exist = function(deltaTime){
 				else
 					this.collider.rotate(0 - 5,0, (this.collider.angle - this.tempAngle) * deltaTime * 5 * this.doorTimer);
 			}
+			else{
+				this.fromPlayer = false;
+			}
 		}
 	
 
 		if(this.doorTimer > 0) this.doorTimer -= deltaTime;
-		if(this.doorTimer === 0) this.doorTimer = doorCooldown;
+		if(this.doorTimer === 0){
+			this.doorTimer = doorCooldown;
+			
+		} 
 
 };
 Door.prototype.draw = function(){
@@ -1069,14 +1179,11 @@ Door.prototype.draw = function(){
 }
 function levelRestart(){
 
-	playerInput = false;
-
 	//player
 	delete player;
 	player = new Player(playerStartPos.x,playerStartPos.y);
 
 	//enemies
-
 	enemies = [];
 	for(var a = 0; a < enemiesData.length; a++){
 		enemies.push(new Enemy(enemiesData[a].img, enemiesData[a].startPos.x,enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints))
@@ -1091,29 +1198,33 @@ function levelRestart(){
 	//bullets
 	bullets = [];
 
+	//is player alive?
+	playerAlive = true;
+	
+	//can player control his character?
 	playerInput = true;
 
 }
 
-//!!!---TO DO---!!!
+//############ PATH NTOTES - 09.03.15 ################
+//	- fixed path following
+//	- better pathfinding - enemy don't stick to walls now
+//	- better player death and better level restart
+//	- better enemy melee attack
+//	- fixed enemy knockback
+//	- fixed enemy lost attention when I hide behind doors
+//	- fixed enemy attack after knockback
+
+//############ ROADMAP ################
+//	- ability to kill enemies
+//	- player melee
+//	- level goal
+//	- enemies guns
+//	- level goal (you win after killing all enemies)
+//	- better doors rotation math
 
 
-//better follow path function
 
-//zapisanie sciezki z poprzedniego ticku i zwrocenie jej gdy this.curPath + 1 = undefined
-
-
-
-
-
-//enemies
-//doors
-//combat
-//death
-//restart
-//level goal
-
-//starting with art?
-//then first level will be complete then try to start making level save data
-//game menu, pause, start and final of game
-//if it complete -> editor?
+//player have 2 weapons - left hand knife (left mouse button) and right hand pistol (right mouse button)
+//2 types of enemies - melee and gun(may be 2 types - rifle and pistol?)
+//
