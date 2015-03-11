@@ -334,7 +334,7 @@ function update(deltaTime){
 		}
 	}
 
-	if(mouseLeftPressed && meleeAttackTimer === 0){
+	if(mouseLeftPressed && meleeAttackTimer === 0 && playerInput){
 		meleeAttackTimer = meleeAttackCooldown;
 	}
 
@@ -810,7 +810,6 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 			}
 		}
-		
 
 		//follow player
 		if(this.playerIsInRange){
