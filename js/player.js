@@ -6,8 +6,8 @@ function Player(x,y,width,height){
 	this.idHeavy = false;
 	this.toNodes = new SAT.Vector();
 
-	this.maxHealth = 100;
-	this.health = 100;
+	this.maxHealth = 1000;
+	this.health = 1000;
 
 	this.level = 1;
 	this.exp = 0;

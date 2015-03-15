@@ -349,7 +349,21 @@ function update(deltaTime){
 	if(mouseLeftPressed && bulletTimer === 0 && playerInput){
 		var temp = new SAT.Vector((mouse.x - CANVASW/2), (mouse.y - CANVASH/2));
 		temp.normalize();
-		var dmg = Math.floor(Math.random() * 10)
+		
+		//damage calculation
+		var dmg = 0
+		var critChance = 15;
+		var crit = "no crit"
+		dmg = 0 + rollDice(10, 10)
+		dmg = Math.min(dmg, 0 + rollDice(10, 10))
+		dmg = Math.max(dmg, 0 + rollDice(10, 10))
+		if (random(100) < critChance){
+		    dmg += 0 + rollDice(10, 10)
+			crit = "crit"
+		}
+
+		//console.log(dmg , crit);
+
 		//console.log(dmg)
 		bullets.push(new Bullet(dmg, bullet, player.collider.pos.x, player.collider.pos.y, 5, bulletsSpeed, new SAT.Vector(temp.x, temp.y)));
 		bulletTimer = bulletCooldown;
@@ -374,10 +388,14 @@ function update(deltaTime){
 	if(player.health > player.maxHealth) player.health = player.maxHealth;
 	if(player.health == 0) player.die();
 
+
+	/*
+	//game win
 	if(enemies.length == 0){
 		win = true;
 		playerInput = false;
 	}
+	*/
 
 	//calculating bullets
 	if(bullets != null){
@@ -633,10 +651,25 @@ function handleInput(deltaTime){
 		levelRestart();
 	}
 
-
+	if(input.isDown("f") && inputTimer === 0){
+		inputTimer = inputCooldown;
+		enemies.push(new Enemy(enemiesData[0].enemyType, enemiesData[0].startPos.x, enemiesData[0].startPos.y, enemiesData[0].radius, enemiesData[0].waypoints, enemiesData[0].exp))
+	
+	}
 };
 function makeAngle(x1,x2,y1,y2){
 	return Math.atan2(y2 - y1,x2 - x1);	
+};
+function random(int){
+	return Math.floor(Math.random() * int);
+};
+function rollDice(N, S){
+    var value = 0
+    
+    for(var a = 0; a < N; a++)
+        value += random(S + 1)
+    
+    return value
 };
 function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle){
 	ctx.save();		

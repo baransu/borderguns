@@ -36,8 +36,8 @@ function Enemy(type, x, y, radius, waypoints, exp){
 
 	this.die = false;
 
-	this.maxHealth = 100;
-	this.health = 100;
+	this.maxHealth = 1000;
+	this.health = 1000;
 
 	this.healthPercentage = 1;
 
@@ -151,7 +151,18 @@ Enemy.prototype.exist = function(deltaTime, id){
 		if(this.attackTimer === 0 && playerAlive){
 			this.deltaV = new SAT.Vector();
 
-			this.meleeDamage = Math.floor(Math.random() * 50)
+			var dmg = 0
+			var critChance = 15;
+			dmg = 0 + rollDice(10, 10)
+			dmg = Math.min(dmg, 0 + rollDice(10, 10))
+			dmg = Math.max(dmg, 0 + rollDice(10, 10))
+			if (random(100) < critChance){
+			    dmg += 0 + rollDice(10, 10)
+			}
+
+
+
+			this.meleeDamage = dmg;
 			player.health -= this.meleeDamage;
 			bloodEffectTimer = bloodEffectDuration;
 
