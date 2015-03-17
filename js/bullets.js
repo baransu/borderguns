@@ -1,4 +1,4 @@
-function Bullet(dmg, img, x, y, radius, speed, deltaV){
+function Bullet(crit, dmg, img, x, y, radius, speed, deltaV){
 	this.radius = radius || 1;
 	this.speed = speed || 1;
 	this.deltaV = deltaV || new SAT.Vector();
@@ -6,6 +6,7 @@ function Bullet(dmg, img, x, y, radius, speed, deltaV){
 	this.collider = new SAT.Circle(new SAT.Vector(x,y), radius);
 	this.angle = makeAngle(this.collider.pos.x, this.collider.pos.x + this.deltaV.x, this.collider.pos.y, this.collider.pos.y + this.deltaV.y);
 	this.damage = dmg;
+	this.crit = crit;
 
 };
 Bullet.prototype.exist = function(deltaTime, id){
@@ -19,6 +20,18 @@ Bullet.prototype.exist = function(deltaTime, id){
 		
 		if(col){
 			enemies[a].health -= this.damage;
+			//moving it to bullets variable and based on damage type 
+			var mainColor = {
+				r: 255,
+				g: 255,
+				b: 255,
+			};
+			var outlineColor = {
+				r: 0,
+				g: 0,
+				b: 0,
+			};
+			dmgText.push(new FloatingText(enemies[a].collider.pos.x, enemies[a].collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
 			bullets.splice(id, 1);
 			break;
 		}

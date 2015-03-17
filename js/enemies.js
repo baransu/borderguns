@@ -160,6 +160,8 @@ Enemy.prototype.exist = function(deltaTime, id){
 			    dmg += 0 + rollDice(10, 10)
 			}
 
+			dmg *= 5
+
 
 
 			this.meleeDamage = dmg;

@@ -1,7 +1,7 @@
 function Player(x,y,width,height){
 	this.pos = new SAT.Vector(x,y);
-	this.width = 50;
-	this.height = 50;
+	this.width = 64;
+	this.height = 64;
 	this.collider = new SAT.Circle(this.pos, (this.width * Math.sqrt(2))/2);
 	this.idHeavy = false;
 	this.toNodes = new SAT.Vector();

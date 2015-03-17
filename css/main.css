@@ -4,7 +4,7 @@
 }
 canvas {
 	display: block;
-	/*cursor:crosshair;*/
+	/*cursor: none;*/
 }
 html, body {
 	width:100%;
