@@ -5,9 +5,8 @@ function FloatingText(x, y, text, crit, color1, color2){
 	this.crit = crit || false;
 	this.color1 = color1;
 	this.color2 = color2;
-	this.size = 20;
+	this.size = parseInt(this.text)/2;
 	this.lifeTime = 1;
-	this.xModifier = (Math.random() * 1.5) - 1;
 	this.transparency = 1;
 
 	this.vx = Math.random() * 10 - 5;
@@ -40,7 +39,7 @@ FloatingText.prototype.draw = function (){
 	}
 
 	ctx.strokeStyle = "rgba(" + this.color2.r + "," + this.color2.g + "," + this.color2.b + "," + this.transparency + ")";
-	ctx.font = this.size + "px Georgia";
+	ctx.font = this.size + "px Pixel";
 	ctx.strokeText(this.text, this.x - viewX, this.y - viewY);
 	ctx.fillText(this.text, this.x - viewX, this.y - viewY);
 };

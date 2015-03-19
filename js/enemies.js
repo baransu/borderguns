@@ -67,6 +67,10 @@ Enemy.prototype.exist = function(deltaTime, id){
 	//make angle
 	this.angle = makeAngle(this.collider.pos.x, this.forward.x, this.collider.pos.y, this.forward.y)
 
+	var toPlayerAngle = makeAngle(this.collider.pos.x, player.collider.pos.x, this.collider.pos.y, player.collider.pos.y)
+	this.forward.x = this.collider.pos.x + Math.cos(toPlayerAngle) * (this.radius + 10);
+	this.forward.y = this.collider.pos.y + Math.sin(toPlayerAngle) * (this.radius + 10);
+
 	if(playerAlive){
 		//look for player
 		var toPlayerX = player.collider.pos.x - this.collider.pos.x;
@@ -111,7 +115,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 	}
 
 	//follow player
-	if(this.playerIsInRange){
+	if(this.playerIsInRange && playerAlive){
 		if(this.enemyType == "melee"){
 			this.state = "follow player"
 			this.useWaypoints = false;
@@ -123,7 +127,23 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 			this.deltaV = this.deltaFromPath();	
 		}
-	
+		/*
+		if(this.enemyType == "melee"){
+			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
+			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
+			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+			var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
+			tempDirection.normalize();
+			if(toPlayer <= 500){
+				//var toPlayerAngle = makeAngle(this.collider.pos.x, player.collider.pos.x, this.collider.pos.y, player.collider.pos.y)
+				var bul = new Bullet(false, 10, bullet, this.forward.x, this.forward.y, 5, bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
+				
+				bullets.push(bul);
+				
+				//shootBullet(this.collider.pos, this.forward)
+			}
+		}
+		*/
 	}
 
 	/*
@@ -162,8 +182,6 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 			dmg *= 5
 
-
-
 			this.meleeDamage = dmg;
 			player.health -= this.meleeDamage;
 			bloodEffectTimer = bloodEffectDuration;
@@ -177,15 +195,16 @@ Enemy.prototype.exist = function(deltaTime, id){
 	this.deltaV.scale(this.speed);
 	this.collider.pos.add(this.deltaV);
 
-	this.forward.x = this.collider.pos.x + this.deltaV.x;
-	this.forward.y = this.collider.pos.y + this.deltaV.y;
-
+	//this.forward.x = this.collider.pos.x + this.deltaV.x;
+	//this.forward.y = this.collider.pos.y + this.deltaV.y;
 
 	//enemy death
 	if(this.health <= 0){
 		if(canLevel)
 			player.exp += this.exp;
 		
+		isFollowing = false;
+		followEnemy = null;
 		enemies.splice(id, 1);
 		
 		console.log(player.exp);
@@ -291,12 +310,23 @@ Enemy.prototype.draw = function(){
 		}
 	}
 
+	ctx.fillStyle = "green"
+	ctx.fillRect(this.forward.x - viewX, this.forward.y - viewY, 10,10)
+
 	//hp bar
 	ctx.lineWidth = 2; 
-	ctx.strokeStyle = "white";
-	ctx.strokeRect(this.collider.pos.x - 100/2 - viewX, this.collider.pos.y - this.radius - 15*2 - viewY, 100, 15)
+	ctx.fillStyle = "black";
+	ctx.fillRect(this.collider.pos.x - 100/2  - viewX, this.collider.pos.y - this.radius - 15*2 - viewY, 100, 15)
+	//ctx.strokeStyle = "white";
+	//ctx.strokeRect(this.collider.pos.x - 100/2 - viewX, this.collider.pos.y - this.radius - 15*2 - viewY, 100, 15)
 	ctx.fillStyle = "red";
 	ctx.fillRect(this.collider.pos.x - 100/2  - viewX, this.collider.pos.y - this.radius - 15*2 - viewY, 100 * this.healthPercentage, 15)
+
+	ctx.strokeStyle = "black";
+	ctx.font = "15px Pixel";
+	ctx.fillStyle = "white"
+	ctx.strokeText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
+	ctx.fillText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
 
 		
 }

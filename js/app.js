@@ -8,6 +8,7 @@ var lastTime;
 var mouse = {};
 var mouseLeftPressed = false;
 var mouseRightPressed = false;
+var mouseMiddlePressed = false;
 var inputTimer = 0;
 var inputCooldown = 0.3;
 var leftX,
@@ -21,11 +22,11 @@ var gamepadRightOffset = 0.15;
 
 //player
 var player;
-var speed = 450;
-var bulletsSpeed = 1200;
+var speed = 500;
+var bulletsSpeed = 2000;
 var bullets = [];
 var bulletTimer = 0;
-var bulletCooldown = 0.1;
+var bulletCooldown = 0.05;
 var mouseToPlayerAngle = 0;
 var meleeAttackTimer = 0;
 var meleeAttackCooldown = 0.5;
@@ -100,24 +101,35 @@ var bullet = new Image();
 var floor = new Image();
 var walls = new Image();
 
+var followEnemy;
+var isFollowing = false;
+var toLastEnemy = 0;
+
+var distanceToEnemies = [];
+
+var followSearch = false;
+
+
 // function to initizalize whole game
 function init(){
 	canvas = document.getElementById("canvas");
 	ctx = canvas.getContext("2d");
 
 	document.addEventListener('mousemove', function(e){
-		mouse.x = e.clientX || e.pageX; 
-		mouse.y = e.clientY || e.pageY;
+		if(!isFollowing){			
+			mouse.x = e.clientX || e.pageX; 
+			mouse.y = e.clientY || e.pageY;
+		}
 
 	}, false);
 
 	document.addEventListener('mousedown', function(e){
-		switch (event.which) {
+		switch (e.which) {
 	        case 1:
 	       		mouseLeftPressed = true;
 	            break;
 	        case 2:
-	            //middle mouse button pressed
+	            mouseMiddlePressed = true;
 	            break;
 	        case 3:
 	            mouseRightPressed = true;
@@ -130,6 +142,7 @@ function init(){
 	document.addEventListener('mouseup', function(e){
 		mouseLeftPressed = false;
 		mouseRightPressed = false;
+		mouseMiddlePressed = false;
 	}, false);
 
 	document.addEventListener('contextmenu', function(e){
@@ -144,7 +157,7 @@ function init(){
 	//images links
 	floor.src = "img/level_floor.png";
 	walls.src = "img/level_walls.png";
-	bullet.src = "img/pobrane.jpg";
+	bullet.src = "img/bullet.png";
 	crosshair.src = "img/crosshair.png";
 	character.src = "img/character.png";	
 
@@ -321,6 +334,15 @@ function init(){
     	}
 	}, 500);	
 
+	if(enemies.length > 0){
+		var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
+		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
+		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+		console.log(toLastEnemy)
+		
+	}
+
+
 	//start game 
 	gameLoop();
 
@@ -401,7 +423,7 @@ function update(deltaTime){
 			temp = playerForward;
 
 		temp.normalize();
-		shootBullet(temp);
+		shootBullet(player.collider.pos, temp);
 	}
 
 	//mouse shooting
@@ -409,7 +431,7 @@ function update(deltaTime){
 		var temp = new SAT.Vector((mouse.x - CANVASW/2), (mouse.y - CANVASH/2));
 		temp.normalize();
 
-		shootBullet(temp);
+		shootBullet(player.collider.pos, temp);
 	}
 
 	//level cap
@@ -460,6 +482,47 @@ function update(deltaTime){
 	viewX = player.pos.x - CANVASW/2;
 	viewY = player.pos.y - CANVASH/2;
 
+	if(followSearch && !isFollowing && enemies.length > 0){
+		distanceToEnemies = [];
+		for(var a = 0; a < enemies.length; a++){
+			var toPlayerX = enemies[a].collider.pos.x - player.collider.pos.x;
+			var toPlayerY = enemies[a].collider.pos.y - player.collider.pos.y;
+			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+
+			distanceToEnemies[a] = toPlayer;							
+
+		}
+
+		toLastEnemy = distanceToEnemies[0];		
+		followEnemy = 0;
+
+		for(var a = 0; a < distanceToEnemies.length; a++){
+			if(distanceToEnemies[0] <= toLastEnemy)
+				followEnemy = a;
+		}
+
+		isFollowing = true;
+		followSearch = false;
+		inputTimer = inputCooldown;
+		//console.log(isFollowing)
+	}
+
+	if(followEnemy != null && distanceToEnemies[followEnemy] > 1000)
+		isFollowing = false;
+
+	if(followSearch && isFollowing){
+		isFollowing = false;
+		followSearch = false;
+		inputTimer = inputCooldown;
+	}
+
+	if(isFollowing && followEnemy != null){
+		mouse.x = enemies[followEnemy].collider.pos.x - viewX;
+		mouse.y = enemies[followEnemy].collider.pos.y - viewY;
+		console.log(mouse.x, mouse.y, enemies[followEnemy].collider.pos.x - viewX, enemies[followEnemy].collider.pos.y - viewY)
+	}
+
+
 	//timers
 	if(bulletTimer > 0) bulletTimer -= deltaTime;
 	if(bulletTimer < 0) bulletTimer = 0;
@@ -487,7 +550,6 @@ function render(){
 
 	//clearing canvas
 	ctx.clearRect(0, 0, CANVASW, CANVASH);	
-
 	//IS IT NESESARY?!
 	//changing background gradient color
 	if(calcGradient){
@@ -525,8 +587,8 @@ function render(){
 	my_gradient.addColorStop(1, gradientColors[1]);
 
 	//background
-	//ctx.fillStyle = my_gradient;
-	ctx.fillStyle = "grey";
+	ctx.fillStyle = my_gradient;
+	//ctx.fillStyle = "grey";
 	ctx.fillRect(0,0,CANVASW,CANVASH);
 
 	//floor
@@ -556,7 +618,7 @@ function render(){
 	}	
 
 	//player
-	drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - (128/2), CANVASH/2 - (128/2), 128, 128, mouseToPlayerAngle);
+	//drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - (128/2), CANVASH/2 - (128/2), 128, 128, mouseToPlayerAngle);
 	
 	//walls
 	//ctx.drawImage(walls, player.pos.x - CANVASW/2, player.pos.y - CANVASH/2, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
@@ -571,17 +633,15 @@ function render(){
 		renderStrokeColliderBox(a, obstacles[a], "black", viewX, viewY);
 
 	
-	//renderStrokeColliderCircle(player.collider, "green", viewX, viewY);
+	renderStrokeColliderCircle(player.collider, "green", viewX, viewY);
 
 	//enemies draw
 	for(var a = 0; a < enemies.length; a++){
 		enemies[a].draw();
 	}
 
-	//dmgtext draw
-	for(var a = 0; a < dmgText.length; a++){
-		dmgText[a].draw();
-	}
+	
+	
 
 	//ctx.fillStyle = "black";
 	//ctx.fillRect(player.pos.x - viewX, player.pos.y - viewY, 5,5)  
@@ -589,6 +649,11 @@ function render(){
 	//cool effects
 	if(postE)
 		postEffects();
+	
+	//dmgtext draw
+	for(var a = 0; a < dmgText.length; a++){
+		dmgText[a].draw();
+	}
 	
 	ctx.lineWidth = 1;
 
@@ -601,7 +666,9 @@ function render(){
 
 		//hp bar text
 		ctx.fillStyle = "white";
-		ctx.font="20px Georgia";
+		ctx.font="30px Pixel";
+		ctx.strokeStyle = "black";
+		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
 		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
 
 		//exp bar
@@ -612,7 +679,9 @@ function render(){
 
 		//level
 		ctx.fillStyle = "white";
-		ctx.font="20px Georgia";
+		ctx.font="20px Pixel";
+		ctx.strokeStyle = "black";
+		ctx.strokeText("" + player.level + "", CANVASW/2 - 250/2.1 ,CANVASH - 50 - 15);
 		ctx.fillText("" + player.level + "", CANVASW/2 - 250/2.1 ,CANVASH - 50 - 15);
 
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
@@ -623,7 +692,9 @@ function render(){
 
 		//credits
 		ctx.fillStyle = "white";
-		ctx.font="10px Georgia";
+		ctx.font="15px Pixel";
+		ctx.strokeStyle = "black";
+		ctx.strokeText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 		ctx.fillText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 	}
 
@@ -631,7 +702,7 @@ function render(){
 	if(!playerAlive){
 		ctx.fillStyle = "rgba(0,0,0,0.7)"
 		ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
-		ctx.font = "50px Georgia"
+		ctx.font = "50px Pixel"
 		ctx.fillStyle = "white";
 		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2)		
 	}
@@ -640,14 +711,16 @@ function render(){
 	if(win){
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
 		ctx.fillRect(CANVASW/2 - 330, CANVASH/2 - 65, 730, 100);
-		ctx.font = "50px Georgia";
+		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
-		ctx.fillText("You won! Press R to play again", CANVASW/2 - 300, CANVASH/2)
+		ctx.strokeStyle = "back";	
+		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
+		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2)
 	}
 	
 };
 //to global and universal to everyone (player and enemies)
-function shootBullet(direction){
+function shootBullet(origin, direction){
 	//damage calculation and spawning bullets
 	var dmg = 0
 	var crit = false
@@ -658,7 +731,7 @@ function shootBullet(direction){
 	    dmg += 0 + rollDice(10, 10)
 		crit = true;
 	}
-	bullets.push(new Bullet(crit, dmg, bullet, player.collider.pos.x, player.collider.pos.y, 5, bulletsSpeed, new SAT.Vector(direction.x, direction.y)));
+	bullets.push(new Bullet(crit, dmg, bullet, origin.x, origin.y, 5, bulletsSpeed, new SAT.Vector(direction.x, direction.y), true));
 	bulletTimer = bulletCooldown;
 };
 function postEffects(){
@@ -744,11 +817,11 @@ function handleInput(deltaTime){
 		}
 	}
 
-	if(input.isDown("q") && gizomos && inputTimer === 0){
+	if(input.isDown("z") && gizomos && inputTimer === 0){
 			gizomos = false;
 			inputTimer = inputCooldown;
 	}
-	if(input.isDown("q") && !gizomos && inputTimer === 0){
+	if(input.isDown("z") && !gizomos && inputTimer === 0){
 			gizomos = true;
 			inputTimer = inputCooldown;
 	}
@@ -759,6 +832,10 @@ function handleInput(deltaTime){
 	}
 	if(input.isDown("e") && !postE && inputTimer === 0){
 			postE = true;
+			inputTimer = inputCooldown;
+	}
+	if(input.isDown("q") && !postE && inputTimer === 0 && !followSearch){
+			followSearch = true;
 			inputTimer = inputCooldown;
 	}
 	if(input.isDown("r") && inputTimer === 0){
@@ -841,6 +918,10 @@ function levelRestart(){
 	for(var a = 0; a < enemiesData.length; a++){
 		enemies.push(new Enemy(enemiesData[a].enemyType, enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
 	}
+
+	isFollowing = false;
+	followSearch = false;
+	followEnemy = null;
 
 	//bullets
 	bullets = [];
