@@ -9,9 +9,6 @@ function Player(x,y,width,height){
 	this.maxHealth = 1000;
 	this.health = 1000;
 
-	this.level = 1;
-	this.exp = 0;
-
 };
 Player.prototype.toNode = function(){
 	for(var a = 0; a < nSizeX; a++){			

@@ -23,10 +23,8 @@ var gamepadRightOffset = 0.15;
 //player
 var player;
 var speed = 500;
-var bulletsSpeed = 2000;
 var bullets = [];
 var bulletTimer = 0;
-var bulletCooldown = 0.05;
 var mouseToPlayerAngle = 0;
 var meleeAttackTimer = 0;
 var meleeAttackCooldown = 0.5;
@@ -56,7 +54,7 @@ var AIWallOffsetL2 = 1;
 var viewX = 0, viewY = 0;
 var bloodEffect = false;
 var bloodEffectTimer = 0;
-var bloodEffectDuration = 0.5;
+var bloodEffectDuration = 0.1;
 var dmgText = [];
 var crosshairPosition = new SAT.Vector();
 
@@ -109,6 +107,15 @@ var distanceToEnemies = [];
 
 var followSearch = false;
 
+var gun = {
+	bulletType: "shotgun",
+	richocetCount: 1000,
+	bulletSpawnCooldown: 0.01,
+	bulletSpeed: 1800,
+	shotgunBullets: 6,
+}
+
+var enemiesType = "ranged";
 
 // function to initizalize whole game
 function init(){
@@ -282,7 +289,7 @@ function init(){
 			new SAT.Vector(900,300),
 			new SAT.Vector(900,500)
 		],
-		enemyType: "melee",
+		enemyType: enemiesType,
 		exp: standardExp,
 	}
 	/*
@@ -338,10 +345,7 @@ function init(){
 		var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
 		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
 		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-		console.log(toLastEnemy)
-		
 	}
-
 
 	//start game 
 	gameLoop();
@@ -407,7 +411,6 @@ function update(deltaTime){
 
 	//playerstuff
 	playerHealthPercentage = player.health/player.maxHealth;
-	levelBarPercentage = player.exp/playerLevelFrames[player.level];
 
 	//player roation toward mouse
 	mouseToPlayerAngle = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
@@ -432,21 +435,6 @@ function update(deltaTime){
 		temp.normalize();
 
 		shootBullet(player.collider.pos, temp);
-	}
-
-	//level cap
-	if(player.level == playerLevelFrames.length - 1){
-		player.exp = 0;
-		canLevel = false;
-		levelBarPercentage = 0;		
-	}
-
-	//leveling
-	if(player.exp > playerLevelFrames[player.level] && canLevel){
-		var tempExp = player.exp - playerLevelFrames[player.level];	
-		player.level++;
-		player.exp = 0;
-		player.exp += tempExp;
 	}
 	
 	//hp calculation
@@ -482,7 +470,7 @@ function update(deltaTime){
 	viewX = player.pos.x - CANVASW/2;
 	viewY = player.pos.y - CANVASH/2;
 
-	if(followSearch && !isFollowing && enemies.length > 0){
+	if(followSearch && !isFollowing && enemies.length > 0 && gun.bulletType != "multishoot"){
 		distanceToEnemies = [];
 		for(var a = 0; a < enemies.length; a++){
 			var toPlayerX = enemies[a].collider.pos.x - player.collider.pos.x;
@@ -504,7 +492,6 @@ function update(deltaTime){
 		isFollowing = true;
 		followSearch = false;
 		inputTimer = inputCooldown;
-		//console.log(isFollowing)
 	}
 
 	if(followEnemy != null && distanceToEnemies[followEnemy] > 1000)
@@ -519,7 +506,6 @@ function update(deltaTime){
 	if(isFollowing && followEnemy != null){
 		mouse.x = enemies[followEnemy].collider.pos.x - viewX;
 		mouse.y = enemies[followEnemy].collider.pos.y - viewY;
-		console.log(mouse.x, mouse.y, enemies[followEnemy].collider.pos.x - viewX, enemies[followEnemy].collider.pos.y - viewY)
 	}
 
 
@@ -623,10 +609,7 @@ function render(){
 	//walls
 	//ctx.drawImage(walls, player.pos.x - CANVASW/2, player.pos.y - CANVASH/2, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
 
-	//bullets draw
-	for(var a = 0; a < bullets.length; a++){
-		bullets[a].draw();
-	}
+	
 
 	//colliders draw
 	for(var a = 1; a < obstacles.length; a++)
@@ -640,6 +623,10 @@ function render(){
 		enemies[a].draw();
 	}
 
+	//bullets draw
+	for(var a = 0; a < bullets.length; a++){
+		bullets[a].draw();
+	}
 	
 	
 
@@ -671,26 +658,14 @@ function render(){
 		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
 		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
 
-		//exp bar
-		ctx.strokeStyle = "white";
-		ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50 - 10, 250, 10)
-		ctx.fillStyle = "blue";
-		ctx.fillRect(CANVASW/2 - 250/2, CANVASH - 50 - 10, 250 * levelBarPercentage, 10)
-
-		//level
-		ctx.fillStyle = "white";
-		ctx.font="20px Pixel";
-		ctx.strokeStyle = "black";
-		ctx.strokeText("" + player.level + "", CANVASW/2 - 250/2.1 ,CANVASH - 50 - 15);
-		ctx.fillText("" + player.level + "", CANVASW/2 - 250/2.1 ,CANVASH - 50 - 15);
-
+		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
 
 	}
 
 	if(win || !playerAlive){
 
-		//credits
+		//copyrights
 		ctx.fillStyle = "white";
 		ctx.font="15px Pixel";
 		ctx.strokeStyle = "black";
@@ -719,7 +694,7 @@ function render(){
 	}
 	
 };
-//to global and universal to everyone (player and enemies)
+//player shooting
 function shootBullet(origin, direction){
 	//damage calculation and spawning bullets
 	var dmg = 0
@@ -731,8 +706,35 @@ function shootBullet(origin, direction){
 	    dmg += 0 + rollDice(10, 10)
 		crit = true;
 	}
-	bullets.push(new Bullet(crit, dmg, bullet, origin.x, origin.y, 5, bulletsSpeed, new SAT.Vector(direction.x, direction.y), true));
-	bulletTimer = bulletCooldown;
+	if(gun.bulletType == "shotgun"){
+
+
+		var bCount = Math.floor(Math.abs(gun.shotgunBullets)/2);
+		if(bCount % 2 == 0)
+			bCount--;
+		for(var a = -bCount; a <= bCount; a++){
+
+			var dir = new SAT.Vector(50, 0);
+			var angle1 = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
+
+			angle1 += Math.PI/18 * a;
+
+			if (angle1 < 0)	angle1 = angle1 + Math.PI*2;
+
+			dir.rotate(angle1)
+			dir.normalize();
+
+			bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, 5, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
+
+		}
+	}
+	else{
+
+		bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, 5, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
+
+	}
+
+	bulletTimer = gun.bulletSpawnCooldown;
 };
 function postEffects(){
 	for(var a = 0; a < CANVASH/5; a++){
@@ -937,22 +939,20 @@ function levelRestart(){
 
 };
 
-//################ CODE NAME BORDERGUNS BRANCH ###################
+//################ CODE NAME: BORDERGUNS ###################
 
 //################ v 0.1 in development ###################
 
 // - Player can walking and shooting
-// - Enemies follow our player when in fieldview
-// - Enemies react to bullets (die)
-// - Enemies attack player when in melee range
+// - Enemies can die
 // - Player never lost enemies attantion
 // - Player can die
 // - Level restart
 // - Added health bars for enemies nad player
-// - Player now can level up (no effect to anything just exist)
 // - Floating damage text
 // - Added gamepad support
 // - Added crosshair for mouse and gamepad
+// - Added types of weapons
 
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
 //Adding types of enemies
@@ -961,31 +961,20 @@ function levelRestart(){
 //range shoot to player and use cover/dodge
 //damage calculation system
 //enemies impact to bullets
-//loot 
-//better level
 //sprites / art
 //enemies cover system
 //enemies dodge system
-//story :D
-//created world but procedural generated dungeons
+//perk system
+//gun shoot system (shotgun itp)
 //cover - dynamic cover nodes list
 //player stats system
 //weapons stats system
-//ammo system
-//leveling tweaking
 //player can restore hp
 //shields / restore over time
+//shield enemies bullet richocet
 //lots of bullets
-//money system
-//kick enemies asses
-//player kick knockback
-//table covers
-//change character collider from circle to polygon ???
 
 //################ OPTIONALS FEATURE ###################
 //gui / menus
-//elemental weapons
-//game save
-//player can reset save
 //node js 
 //beautify code

@@ -27,8 +27,6 @@ function Enemy(type, x, y, radius, waypoints, exp){
 
 	this.curWaypointToNode = new SAT.Vector();
 
-	this.state = "created";
-
 	this.lastDeltaV = new SAT.Vector();
 
 	this.attackTimer = 0;
@@ -41,7 +39,10 @@ function Enemy(type, x, y, radius, waypoints, exp){
 
 	this.healthPercentage = 1;
 
-	this.exp = exp || 0;
+	this.bulletsTimer = 0;
+	this.bulletCooldown = 0.1;
+
+	this.bulletsSpeed = 1000;
 
 };
 Enemy.prototype.exist = function(deltaTime, id){
@@ -103,7 +104,8 @@ Enemy.prototype.exist = function(deltaTime, id){
 				var obstaclesCount = 0;
 				for(var a = 1; a < obstacles.length; a++){
 					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon())
-					if(this.toPlayerCollision) {								
+					if(this.toPlayerCollision) {
+						this.playerIsInRange = false;								
 						break;					
 					}
 					else {
@@ -117,7 +119,6 @@ Enemy.prototype.exist = function(deltaTime, id){
 	//follow player
 	if(this.playerIsInRange && playerAlive){
 		if(this.enemyType == "melee"){
-			this.state = "follow player"
 			this.useWaypoints = false;
 			this.toNodes = this.toNode(this.collider.pos)
 
@@ -126,69 +127,98 @@ Enemy.prototype.exist = function(deltaTime, id){
 			this.makePath(this.lastPlayerPos);
 
 			this.deltaV = this.deltaFromPath();	
+
+			var meleeContact = SAT.testCircleCircle(this.collider, player.collider)
+
+			//got ya
+			if(meleeContact){
+				this.deltaV = new SAT.Vector();
+
+				if(this.attackTimer === 0 && playerAlive){
+					this.deltaV = new SAT.Vector();
+
+					var dmg = 0
+					var critChance = 15;
+					dmg = 0 + rollDice(10, 10)
+					dmg = Math.min(dmg, 0 + rollDice(10, 10))
+					dmg = Math.max(dmg, 0 + rollDice(10, 10))
+					if (random(100) < critChance){
+					    dmg += 0 + rollDice(10, 10)
+					}
+
+					dmg *= 5
+
+					this.meleeDamage = dmg;
+					player.health -= this.meleeDamage;
+					bloodEffectTimer = bloodEffectDuration;
+
+					this.attackTimer = this.attackCooldown;
+				}
+			}
+
 		}
-		/*
-		if(this.enemyType == "melee"){
+		
+		if(this.enemyType == "ranged" && this.bulletsTimer == 0){
 			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
 			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
 			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-			var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
-			tempDirection.normalize();
+
 			if(toPlayer <= 500){
-				//var toPlayerAngle = makeAngle(this.collider.pos.x, player.collider.pos.x, this.collider.pos.y, player.collider.pos.y)
-				var bul = new Bullet(false, 10, bullet, this.forward.x, this.forward.y, 5, bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
+
+				this.deltaV = new SAT.Vector();
+
+				var dmg = 0
+				var critChance = 15;
+				dmg = 0 + rollDice(10, 10)
+				dmg = Math.min(dmg, 0 + rollDice(10, 10))
+				dmg = Math.max(dmg, 0 + rollDice(10, 10))
+				if (random(100) < critChance){
+				    dmg += 0 + rollDice(10, 10)
+				}
+
+				dmg = Math.round(dmg/5);
+
+				//bullet shoot direction
+				var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
+				tempDirection.normalize();
+
+				var bul = new Bullet("simple", 0 , false, dmg, bullet, this.forward.x, this.forward.y, 5, this.bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
 				
 				bullets.push(bul);
-				
-				//shootBullet(this.collider.pos, this.forward)
+				this.bulletsTimer = this.bulletCooldown;
+			}
+
+			else {
+				this.useWaypoints = false;
+				this.toNodes = this.toNode(this.collider.pos)
+
+				this.lastPlayerPos = player.toNode();
+
+				this.makePath(this.lastPlayerPos);
+
+				this.deltaV = this.deltaFromPath();	
 			}
 		}
-		*/
+		
 	}
 
-	/*
+	if(!playerAlive)
+		this.deltaV = new SAT.Vector();
+
+	
 	//moving to player last pos
 	if(!this.playerIsInRange && !this.useWaypoints){
 
-		this.state = "moving to player last pos"
+		this.toNodes = this.toNode(this.collider.pos)
 
-		var toPlayerLast = Math.sqrt(Math.pow(((this.lastPlayerPos.x * pathfindingNodesScale) - this.collider.pos.x),2) + Math.pow(((this.lastPlayerPos.y * pathfindingNodesScale) - this.collider.pos.y),2));	
-	
-		if(toPlayerLast <= toPointOffset)
-			this.backToWaypoint = true;
+		this.lastPlayerPos = player.toNode();
+
+		this.makePath(this.lastPlayerPos);
 
 		this.deltaV = this.deltaFromPath();	
 
 	}
-	*/
-
-	var meleeContact = SAT.testCircleCircle(this.collider, player.collider)
-
-	//got ya
-	if(meleeContact){
-		this.deltaV = new SAT.Vector();
-
-		if(this.attackTimer === 0 && playerAlive){
-			this.deltaV = new SAT.Vector();
-
-			var dmg = 0
-			var critChance = 15;
-			dmg = 0 + rollDice(10, 10)
-			dmg = Math.min(dmg, 0 + rollDice(10, 10))
-			dmg = Math.max(dmg, 0 + rollDice(10, 10))
-			if (random(100) < critChance){
-			    dmg += 0 + rollDice(10, 10)
-			}
-
-			dmg *= 5
-
-			this.meleeDamage = dmg;
-			player.health -= this.meleeDamage;
-			bloodEffectTimer = bloodEffectDuration;
-
-			this.attackTimer = this.attackCooldown;
-		}
-	}
+	
 
 	this.collisionCheck();
 
@@ -199,15 +229,11 @@ Enemy.prototype.exist = function(deltaTime, id){
 	//this.forward.y = this.collider.pos.y + this.deltaV.y;
 
 	//enemy death
-	if(this.health <= 0){
-		if(canLevel)
-			player.exp += this.exp;
-		
+	if(this.health <= 0){		
 		isFollowing = false;
 		followEnemy = null;
-		enemies.splice(id, 1);
-		
-		console.log(player.exp);
+		gun.richocetCount++;
+		enemies.splice(id, 1);		
 	}
 
 	//hp bar math
@@ -223,6 +249,9 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 	if(this.attackTimer > 0) this.attackTimer -= deltaTime;
 	if(this.attackTimer < 0) this.attackTimer = 0;
+
+	if(this.bulletsTimer > 0) this.bulletsTimer -= deltaTime;
+	if(this.bulletsTimer < 0) this.bulletsTimer = 0;
 
 
 };
