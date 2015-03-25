@@ -108,11 +108,12 @@ var distanceToEnemies = [];
 var followSearch = false;
 
 var gun = {
-	bulletType: "shotgun",
-	richocetCount: 1000,
-	bulletSpawnCooldown: 0.01,
-	bulletSpeed: 1800,
-	shotgunBullets: 6,
+	bulletType: "multishot",
+	richocetCount: 50,
+	bulletSpawnCooldown: 0.1,
+	bulletSpeed: 1500,
+	shotgunBullets: 2,
+	bulletSize: 5,
 }
 
 var enemiesType = "ranged";
@@ -609,7 +610,10 @@ function render(){
 	//walls
 	//ctx.drawImage(walls, player.pos.x - CANVASW/2, player.pos.y - CANVASH/2, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
 
-	
+	//bullets draw
+	for(var a = 0; a < bullets.length; a++){
+		bullets[a].draw();
+	}
 
 	//colliders draw
 	for(var a = 1; a < obstacles.length; a++)
@@ -623,12 +627,9 @@ function render(){
 		enemies[a].draw();
 	}
 
-	//bullets draw
 	for(var a = 0; a < bullets.length; a++){
-		bullets[a].draw();
-	}
-	
-	
+		bullets[a].multishotDraw();
+	}	
 
 	//ctx.fillStyle = "black";
 	//ctx.fillRect(player.pos.x - viewX, player.pos.y - viewY, 5,5)  
@@ -724,13 +725,13 @@ function shootBullet(origin, direction){
 			dir.rotate(angle1)
 			dir.normalize();
 
-			bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, 5, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
+			bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
 
 		}
 	}
 	else{
 
-		bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, 5, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
+		bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
 
 	}
 
@@ -872,8 +873,9 @@ function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, an
 };
 function renderStrokeColliderBox(name, collider, color, viewX, viewY){
 	ctx.fillStyle = color;
-	//ctx.strokeStyle = color;
 	ctx.fillRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
+	//ctx.strokeStyle = color;
+	//ctx.strokeRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
 	ctx.font = "20px Georgia"
 	ctx.fillText(name, collider.pos.x - viewX, collider.pos.y + 20 - viewY);
 };
@@ -965,7 +967,6 @@ function levelRestart(){
 //enemies cover system
 //enemies dodge system
 //perk system
-//gun shoot system (shotgun itp)
 //cover - dynamic cover nodes list
 //player stats system
 //weapons stats system
@@ -978,3 +979,15 @@ function levelRestart(){
 //gui / menus
 //node js 
 //beautify code
+
+
+
+//################ CRUNCH ###################\
+//waves
+//perks
+//waves add bonus
+//bigger lavel
+
+//player stats
+//weapons stat
+

@@ -1,5 +1,5 @@
 var gun = {
-	bulletType: "simple", // "shotgun" , "multishoot"
+	bulletType: "simple", // "shotgun" , "multishot"
 	richocetCount: 1, // ilosc rykoszetow
 	bulletSpawnCooldown: 0.5, //cooldown strzelania
 	bulletSpeed: 1000, //predkosc posickow

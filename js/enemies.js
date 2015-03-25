@@ -16,7 +16,7 @@ function Enemy(type, x, y, radius, waypoints, exp){
 	this.toPlayerCollision = true;
 	this.playerIsInRange = false;
 
-	this.useWaypoints = true;
+	this.useWaypoints = false;
 
 	this.waypointsToNode = null;
 	this.toNodes = new SAT.Vector();
@@ -159,6 +159,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 		}
 		
 		if(this.enemyType == "ranged" && this.bulletsTimer == 0){
+			this.useWaypoints = false;
 			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
 			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
 			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
@@ -182,14 +183,14 @@ Enemy.prototype.exist = function(deltaTime, id){
 				var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
 				tempDirection.normalize();
 
-				var bul = new Bullet("simple", 0 , false, dmg, bullet, this.forward.x, this.forward.y, 5, this.bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
+				var bul = new Bullet("simple", 0 , false, dmg, bullet, this.forward.x, this.forward.y, gun.bulletSize, this.bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
 				
 				bullets.push(bul);
 				this.bulletsTimer = this.bulletCooldown;
 			}
 
 			else {
-				this.useWaypoints = false;
+
 				this.toNodes = this.toNode(this.collider.pos)
 
 				this.lastPlayerPos = player.toNode();
@@ -204,7 +205,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 
 	if(!playerAlive)
 		this.deltaV = new SAT.Vector();
-
+	
 	
 	//moving to player last pos
 	if(!this.playerIsInRange && !this.useWaypoints){
