@@ -1,14 +1,15 @@
 function Player(x,y,width,height){
 	this.pos = new SAT.Vector(x,y);
 	this.width = 64;
-	this.height = 64;
-	this.collider = new SAT.Circle(this.pos, (this.width * Math.sqrt(2))/2);
+	this.height = 64;	
+	
+	this.collider = new SAT.Circle(this.pos, (this.width * Math.sqrt(2))/2);	
 	this.idHeavy = false;
 	this.toNodes = new SAT.Vector();
 
 	this.maxHealth = 1000;
 	this.health = 1000;
-
+	
 };
 Player.prototype.toNode = function(){
 	for(var a = 0; a < nSizeX; a++){			
@@ -25,6 +26,7 @@ Player.prototype.toNode = function(){
 	return this.toNodes;
 };
 Player.prototype.die = function(){
+
 	playerInput = false;
 	playerAlive = false;
 

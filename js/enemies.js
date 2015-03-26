@@ -44,6 +44,8 @@ function Enemy(type, x, y, radius, waypoints, exp){
 
 	this.bulletsSpeed = 1000;
 
+	this.canShoot = false;
+
 };
 Enemy.prototype.exist = function(deltaTime, id){
 
@@ -104,8 +106,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 				var obstaclesCount = 0;
 				for(var a = 1; a < obstacles.length; a++){
 					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon())
-					if(this.toPlayerCollision) {
-						this.playerIsInRange = false;								
+					if(this.toPlayerCollision) {								
 						break;					
 					}
 					else {
@@ -138,16 +139,15 @@ Enemy.prototype.exist = function(deltaTime, id){
 					this.deltaV = new SAT.Vector();
 
 					var dmg = 0
-					var critChance = 15;
-					dmg = 0 + rollDice(10, 10)
+					dmg = 0 + rollDice(10,10)
 					dmg = Math.min(dmg, 0 + rollDice(10, 10))
-					dmg = Math.max(dmg, 0 + rollDice(10, 10))
-					if (random(100) < critChance){
+					dmg = Math.max(dmg, 0 + rollDice(10., 10))
+					if (random(100) < enemiesCrit){
 					    dmg += 0 + rollDice(10, 10)
 					}
 
-					dmg *= 5
-
+					dmg *= 2;
+					
 					this.meleeDamage = dmg;
 					player.health -= this.meleeDamage;
 					bloodEffectTimer = bloodEffectDuration;
@@ -164,21 +164,44 @@ Enemy.prototype.exist = function(deltaTime, id){
 			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
 			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
 
-			if(toPlayer <= 500){
+			this.toNodes = this.toNode(this.collider.pos)
+
+			this.lastPlayerPos = player.toNode();
+
+			this.makePath(this.lastPlayerPos);
+
+			this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),[
+					new SAT.Vector(),
+					new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
+					new SAT.Vector(player.collider.pos.x - this.collider.pos.x + 20, player.collider.pos.y - this.collider.pos.y + 20),
+					new SAT.Vector(20,20),
+				]);
+
+			for(var a = 1; a < obstacles.length; a++){
+				this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon());
+
+				if(this.toPlayerCollision)	{
+					this.canShoot = false;							
+					break;		
+					
+				}
+				else {
+					this.canShoot = true;
+				}
+			}
+
+			if(toPlayer <= 500 && this.canShoot){
 
 				this.deltaV = new SAT.Vector();
 
 				var dmg = 0
-				var critChance = 15;
 				dmg = 0 + rollDice(10, 10)
 				dmg = Math.min(dmg, 0 + rollDice(10, 10))
 				dmg = Math.max(dmg, 0 + rollDice(10, 10))
-				if (random(100) < critChance){
-				    dmg += 0 + rollDice(10, 10)
-				}
-
-				dmg = Math.round(dmg/5);
-
+				if (random(100) < enemiesCrit){
+					dmg += 0 + rollDice(10, 10)
+				}					
+				
 				//bullet shoot direction
 				var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
 				tempDirection.normalize();
@@ -187,15 +210,10 @@ Enemy.prototype.exist = function(deltaTime, id){
 				
 				bullets.push(bul);
 				this.bulletsTimer = this.bulletCooldown;
+				this.canShoot = false;
 			}
 
 			else {
-
-				this.toNodes = this.toNode(this.collider.pos)
-
-				this.lastPlayerPos = player.toNode();
-
-				this.makePath(this.lastPlayerPos);
 
 				this.deltaV = this.deltaFromPath();	
 			}
@@ -207,8 +225,10 @@ Enemy.prototype.exist = function(deltaTime, id){
 		this.deltaV = new SAT.Vector();
 	
 	
+	
 	//moving to player last pos
-	if(!this.playerIsInRange && !this.useWaypoints){
+	/*
+	if(!this.playerIsInRange){
 
 		this.toNodes = this.toNode(this.collider.pos)
 
@@ -219,7 +239,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 		this.deltaV = this.deltaFromPath();	
 
 	}
-	
+	*/
 
 	this.collisionCheck();
 
@@ -233,7 +253,6 @@ Enemy.prototype.exist = function(deltaTime, id){
 	if(this.health <= 0){		
 		isFollowing = false;
 		followEnemy = null;
-		gun.richocetCount++;
 		enemies.splice(id, 1);		
 	}
 
@@ -331,7 +350,11 @@ Enemy.prototype.draw = function(){
 			ctx.fillRect(this.path[a].x * pathfindingNodesScale - viewX, this.path[a].y * pathfindingNodesScale - viewY, pathfindingNodesScale, pathfindingNodesScale)
 		}
 
-	renderStrokeColliderCircle(this.collider, "yellow", viewX, viewY);
+	if(this.enemyType == "melee")
+		renderStrokeColliderCircle(this.collider, "red", viewX, viewY);
+
+	if(this.enemyType == "ranged")
+		renderStrokeColliderCircle(this.collider, "orange", viewX, viewY);
 
 	if(gizomos){		
 		ctx.fillStyle = "black"

@@ -68,7 +68,8 @@ var colors = [
 	[255,35,98],
 	[45,175,230],
 	[255,0,255],
-	[255,128,0]];
+	[255,128,0]
+	];
 
 var step = 0;
 var colorIndices = [0,1,2,3];
@@ -108,15 +109,28 @@ var distanceToEnemies = [];
 var followSearch = false;
 
 var gun = {
-	bulletType: "multishot",
-	richocetCount: 50,
-	bulletSpawnCooldown: 0.1,
+	bulletType: "simple",
+	richocetCount: 1,
+	bulletSpawnCooldown: 0,
 	bulletSpeed: 1500,
 	shotgunBullets: 2,
-	bulletSize: 5,
+	bulletSize: 2,
 }
 
-var enemiesType = "ranged";
+var enemiesTypes = [
+	"ranged",
+	"melee",
+];
+
+var wave;
+
+var waveLevel = 0;
+
+var enemiesCrit = 5;
+
+var canWave = true;
+
+var ls = localStorage;
 
 // function to initizalize whole game
 function init(){
@@ -280,7 +294,7 @@ function init(){
 	
 	//temp ex value
 	var standardExp = 50;
-
+	
 	//enemies data standard so far
 	//types of enemies
 	enemiesData[0] = {
@@ -290,7 +304,7 @@ function init(){
 			new SAT.Vector(900,300),
 			new SAT.Vector(900,500)
 		],
-		enemyType: enemiesType,
+		//enemyType: enemiesType,
 		exp: standardExp,
 	}
 	/*
@@ -327,10 +341,15 @@ function init(){
 	*/
 
 	//adding temp enemies
+	/*
 	for(var a = 0; a < enemiesData.length; a++){
-		enemies.push(new Enemy(enemiesData[a].enemyType, enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
+		var abc = Math.floor(Math.random() * 2);
+		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
 	}
-
+	*/
+	//wave = new Wave(0, 10);
+	//wave.init();
+	
 	//checking is pad connected
 	var checkGP = setInterval(function (){
 		if(navigator.getGamepads()[0]) {
@@ -347,8 +366,9 @@ function init(){
 		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
 		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
 	}
-
+	
 	//start game 
+	console.log(enemies.length);
 	gameLoop();
 
 };
@@ -366,6 +386,15 @@ function gameLoop() {
 };
 // function to update everything
 function update(deltaTime){
+	
+	if(enemies.length == 0){
+		gun.richocetCount++;
+		player.health = player.maxHealth;
+		waveLevel += 1;
+		wave = null;
+		wave = new Wave(0, waveLevel);
+		wave.init();
+	}
 	
 	//calculation crosshair position
 	if(useGamepad ){
@@ -508,9 +537,10 @@ function update(deltaTime){
 		mouse.x = enemies[followEnemy].collider.pos.x - viewX;
 		mouse.y = enemies[followEnemy].collider.pos.y - viewY;
 	}
+	
 
 
-	//timers
+	//timers		
 	if(bulletTimer > 0) bulletTimer -= deltaTime;
 	if(bulletTimer < 0) bulletTimer = 0;
 	
@@ -674,25 +704,45 @@ function render(){
 		ctx.fillText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 	}
 
+	
 	//game over
 	if(!playerAlive){
 		ctx.fillStyle = "rgba(0,0,0,0.7)"
-		ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
+		//ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
 		ctx.font = "50px Pixel"
 		ctx.fillStyle = "white";
 		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2)		
-	}
+		
+			if(ls.getItem("best") != null) {
+			var abc = ls.getItem("base");
+			console.log(abc)
+			if(waveLevel > abc)
+				ls.setItem("base", waveLevel);
+			ctx.font = "20px Pixel";
+			ctx.fillText("Best: " + abc, 0, 100);
+		}
+		else {
+			ls.setItem("base", waveLevel);
+		}	
+		
+		ctx.font = "20px Pixel";
+		ctx.fillText("Your score: " + waveLevel, 0, 80);
+	}	
 
 	//win
 	if(win){
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
-		ctx.fillRect(CANVASW/2 - 330, CANVASH/2 - 65, 730, 100);
+		//ctx.fillRect(CANVASW/2 - 330, CANVASH/2 - 65, 730, 100);
 		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
 		ctx.strokeStyle = "back";	
 		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
 		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2)
 	}
+	
+	//wave info
+	if(wave != null)
+		wave.draw();	
 	
 };
 //player shooting
@@ -753,8 +803,8 @@ function gradientCircleFilter(x, y, r, c) {
     ctx.beginPath();
     var rad = ctx.createRadialGradient(x, y, 1, x, y, r);
     rad.addColorStop(0, 'rgba('+c+',0)');
-    rad.addColorStop(0.6, 'rgba('+c+',1)');
-    rad.addColorStop(1, 'rgba('+c+',1)');
+    rad.addColorStop(1, 'rgba('+c+',0.5)');
+    //rad.addColorStop(1, 'rgba('+c+',1)');
     ctx.fillStyle = rad;
     ctx.arc(x, y, r, 0, Math.PI*2, false);
     ctx.fill();
@@ -847,7 +897,8 @@ function handleInput(deltaTime){
 	}
 	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0){
 		inputTimer = inputCooldown;
-		enemies.push(new Enemy(enemiesData[0].enemyType, enemiesData[0].startPos.x, enemiesData[0].startPos.y, enemiesData[0].radius, enemiesData[0].waypoints, enemiesData[0].exp));
+		var abc = Math.floor(Math.random() * 2);
+		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[0].startPos.x, enemiesData[0].startPos.y, enemiesData[0].radius, enemiesData[0].waypoints, enemiesData[0].exp));
 	}
 };
 function makeAngle(x1,x2,y1,y2){
@@ -913,16 +964,24 @@ function collisonResponse(response, obj1, obj2){
 };
 function levelRestart(){
 
+	
+
+
 	//player
 	delete player;
 	player = new Player(playerStartPos.x,playerStartPos.y);
 
 	//enemies
 	enemies = [];
+	/*
 	for(var a = 0; a < enemiesData.length; a++){
-		enemies.push(new Enemy(enemiesData[a].enemyType, enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
+		var abc = Math.floor(Math.random() * 2);
+		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
 	}
-
+	*/
+	
+	waveLevel = 0;
+	
 	isFollowing = false;
 	followSearch = false;
 	followEnemy = null;
@@ -938,6 +997,7 @@ function levelRestart(){
 
 	//is game won
 	win = false;
+
 
 };
 

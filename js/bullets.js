@@ -66,9 +66,9 @@ Bullet.prototype.exist = function(deltaTime, id){
 		}
 	}
 
-
-
 	if(this.type == "simple" || this.type == "shotgun"){
+
+		this.freeFloat = true;
 
 		this.collider.pos.x += this.deltaV.x * this.speed * deltaTime;
 		this.collider.pos.y += this.deltaV.y * this.speed * deltaTime;
@@ -160,20 +160,18 @@ Bullet.prototype.exist = function(deltaTime, id){
 		}
 	}
 
-	if(this.collider.pos.x < -CANVASW || this.collider.pos.y < -CANVASH || this.collider.pos.x > CANVASW*2 || this.collider.pos.y > CANVASH*2){
+	if(this.collider.pos.x < -2000 || this.collider.pos.y < -2000 || this.collider.pos.x > 4000|| this.collider.pos.y > 2000){
 		bullets.splice(id, 1);
-	}
-
-	
+	}	
 
 };
 Bullet.prototype.draw = function(){
 	//drawRotatedImg(this.img, 0, 0, 32, 32, this.collider.pos.x - viewX - 16, this.collider.pos.y - viewY - 16, 32, 32, this.angle);
 	if(this.freeFloat)
 		if(this.fromPlayer)
-			renderStrokeColliderCircle(this.collider, "red", viewX, viewY);
+			renderStrokeColliderCircle(this.collider, "black", viewX, viewY);
 		else
-			renderStrokeColliderCircle(this.collider, "yellow", viewX, viewY);
+			renderStrokeColliderCircle(this.collider, "orange", viewX, viewY);
 };
 Bullet.prototype.multishotDraw = function(){
 	if(!this.freeFloat)
