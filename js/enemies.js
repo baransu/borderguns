@@ -1,4 +1,4 @@
-function Enemy(type, x, y, radius, waypoints, exp){
+function Enemy(type, x, y, radius, waypoints, hp){
 	this.enemyType = type;
 
 	this.radius = radius;
@@ -34,8 +34,8 @@ function Enemy(type, x, y, radius, waypoints, exp){
 
 	this.die = false;
 
-	this.maxHealth = 1000;
-	this.health = 1000;
+	this.maxHealth = hp;
+	this.health = hp;
 
 	this.healthPercentage = 1;
 
@@ -47,7 +47,7 @@ function Enemy(type, x, y, radius, waypoints, exp){
 	this.canShoot = false;
 
 };
-Enemy.prototype.exist = function(deltaTime, id){
+Enemy.prototype.update = function(deltaTime, id){
 
 	if(this.waypoints != null && this.useWaypoints){
 
@@ -105,7 +105,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 				var obstaclesCol = true;
 				var obstaclesCount = 0;
 				for(var a = 1; a < obstacles.length; a++){
-					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon())
+					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon())
 					if(this.toPlayerCollision) {								
 						break;					
 					}
@@ -178,7 +178,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 				]);
 
 			for(var a = 1; a < obstacles.length; a++){
-				this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, obstacles[a].toPolygon());
+				this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon());
 
 				if(this.toPlayerCollision)	{
 					this.canShoot = false;							
@@ -195,20 +195,22 @@ Enemy.prototype.exist = function(deltaTime, id){
 				this.deltaV = new SAT.Vector();
 
 				var dmg = 0
+				var crit = false;
 				dmg = 0 + rollDice(10, 10)
 				dmg = Math.min(dmg, 0 + rollDice(10, 10))
 				dmg = Math.max(dmg, 0 + rollDice(10, 10))
 				if (random(100) < enemiesCrit){
 					dmg += 0 + rollDice(10, 10)
+					crit = true;
 				}					
 				
 				//bullet shoot direction
 				var tempDirection = new SAT.Vector(toPlayerX, toPlayerY)
 				tempDirection.normalize();
 
-				var bul = new Bullet("simple", 0 , false, dmg, bullet, this.forward.x, this.forward.y, gun.bulletSize, this.bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
+				var bul = new Bullet("simple", 0 , crit, dmg, bullet, this.forward.x, this.forward.y, gun.bulletSize, this.bulletsSpeed, new SAT.Vector(tempDirection.x, tempDirection.y, false));
 				
-				bullets.push(bul);
+				level.bullets.push(bul);
 				this.bulletsTimer = this.bulletCooldown;
 				this.canShoot = false;
 			}
@@ -253,7 +255,7 @@ Enemy.prototype.exist = function(deltaTime, id){
 	if(this.health <= 0){		
 		isFollowing = false;
 		followEnemy = null;
-		enemies.splice(id, 1);		
+		level.wave.enemies.splice(id, 1);		
 	}
 
 	//hp bar math
@@ -327,16 +329,16 @@ Enemy.prototype.deltaFromPath = function(){
 
 };
 Enemy.prototype.collisionCheck = function(){
-	if(obstacles != null){
+	if(level.obstacles != null){
 
-		for(var a = 0; a < obstacles.length; a++){
+		for(var a = 0; a < level.obstacles.length; a++){
 
-			var responseEnemy = new SAT.Response();
-			var collideEnemy = SAT.testPolygonCircle(obstacles[a].toPolygon(), this.collider, responseEnemy)
+			var response = new SAT.Response();
+			var col = SAT.testPolygonCircle(level.obstacles[a].toPolygon(), this.collider, response)
 
-			if(collideEnemy){
+			if(col){
 
-				collisonResponse(responseEnemy, this.collider, obstacles[a]);
+				collisonResponse(response, this.collider, obstacles[a]);
 
 			}		
 		}
@@ -382,4 +384,9 @@ Enemy.prototype.draw = function(){
 	ctx.fillText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
 
 		
+}
+
+Enemy.prototype.drawShadows = function(){
+
+	
 }

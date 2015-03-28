@@ -132,6 +132,10 @@ var canWave = true;
 
 var ls = localStorage;
 
+var enemiesSizeScale = 30;
+
+var level = null;
+
 // function to initizalize whole game
 function init(){
 	canvas = document.getElementById("canvas");
@@ -200,27 +204,29 @@ function init(){
 
 	/*
 	//inner walls
-	obstacles[5] = new SAT.Box(new SAT.Vector( 40, 270), 235, 50);
-	obstacles[6] = new SAT.Box(new SAT.Vector( 285, 30), 30, 110);
-	obstacles[7] = new SAT.Box(new SAT.Vector( 280, 270), 50, 280);
-	obstacles[8] = new SAT.Box(new SAT.Vector( 1650, 590), 210, 50);
+	{
+		obstacles[5] = new SAT.Box(new SAT.Vector( 40, 270), 235, 50);
+		obstacles[6] = new SAT.Box(new SAT.Vector( 285, 30), 30, 110);
+		obstacles[7] = new SAT.Box(new SAT.Vector( 280, 270), 50, 280);
+		obstacles[8] = new SAT.Box(new SAT.Vector( 1650, 590), 210, 50);
 
-	obstacles[9] = new SAT.Box(new SAT.Vector( 1150, 50), 50, 580);
-	obstacles[10] = new SAT.Box(new SAT.Vector( 1200, 590), 255, 50);
-	obstacles[11] = new SAT.Box(new SAT.Vector( 950, 430), 50, 140);
-	obstacles[12] = new SAT.Box(new SAT.Vector( 750, 560), 240, 50);
+		obstacles[9] = new SAT.Box(new SAT.Vector( 1150, 50), 50, 580);
+		obstacles[10] = new SAT.Box(new SAT.Vector( 1200, 590), 255, 50);
+		obstacles[11] = new SAT.Box(new SAT.Vector( 950, 430), 50, 140);
+		obstacles[12] = new SAT.Box(new SAT.Vector( 750, 560), 240, 50);
 
-	obstacles[13] = new SAT.Box(new SAT.Vector( 40, 580), 630, 50);
-	obstacles[14] = new SAT.Box(new SAT.Vector( 620, 650), 50, 200);
-	obstacles[15] = new SAT.Box(new SAT.Vector( 620, 935), 50, 100);
-	obstacles[16] = new SAT.Box(new SAT.Vector( 795, 935), 50, 100);
+		obstacles[13] = new SAT.Box(new SAT.Vector( 40, 580), 630, 50);
+		obstacles[14] = new SAT.Box(new SAT.Vector( 620, 650), 50, 200);
+		obstacles[15] = new SAT.Box(new SAT.Vector( 620, 935), 50, 100);
+		obstacles[16] = new SAT.Box(new SAT.Vector( 795, 935), 50, 100);
 
-	obstacles[17] = new SAT.Box(new SAT.Vector( 795, 735), 50, 100);
-	obstacles[18] = new SAT.Box(new SAT.Vector( 790, 700), 350, 50);
-	obstacles[19] = new SAT.Box(new SAT.Vector( 1300, 935), 50, 100);
-	obstacles[20] = new SAT.Box(new SAT.Vector( 1300, 745), 50, 110);
+		obstacles[17] = new SAT.Box(new SAT.Vector( 795, 735), 50, 100);
+		obstacles[18] = new SAT.Box(new SAT.Vector( 790, 700), 350, 50);
+		obstacles[19] = new SAT.Box(new SAT.Vector( 1300, 935), 50, 100);
+		obstacles[20] = new SAT.Box(new SAT.Vector( 1300, 745), 50, 110);
 
-	obstacles[21] = new SAT.Box(new SAT.Vector( 950, 50), 50, 260);
+		obstacles[21] = new SAT.Box(new SAT.Vector( 950, 50), 50, 260);
+	}
 	*/
 		
 	for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
@@ -291,10 +297,7 @@ function init(){
 	//diagonal pathfinding
 	pathfindingGraph = new Graph(pathfindingNodes)
 	pathfindingGraph.diagonal = true;
-	
-	//temp ex value
-	var standardExp = 50;
-	
+
 	//enemies data standard so far
 	//types of enemies
 	enemiesData[0] = {
@@ -304,52 +307,9 @@ function init(){
 			new SAT.Vector(900,300),
 			new SAT.Vector(900,500)
 		],
-		//enemyType: enemiesType,
-		exp: standardExp,
+		hp: 1000,
 	}
-	/*
-	enemiesData[1] = {
-		startPos: new SAT.Vector(500,300),
-		radius: 30,
-		waypoints: [
-			new SAT.Vector(800,300),
-			new SAT.Vector(1000,500)
-		],
-		enemyType: "melee",
-		exp: standardExp,
-	}
-	enemiesData[2] = {
-		startPos: new SAT.Vector(500,300),
-		radius: 40,
-		waypoints: [
-			new SAT.Vector(700,300),
-			new SAT.Vector(900,500)
-		],
-		enemyType: "melee",
-		exp: standardExp,
-	}
-	enemiesData[3] = {
-		startPos: new SAT.Vector(500,300),
-		radius: 20,
-		waypoints: [
-			new SAT.Vector(800,1000),
-			new SAT.Vector(1000,500)
-		],
-		enemyType: "melee",
-		exp: standardExp,
-	}
-	*/
 
-	//adding temp enemies
-	/*
-	for(var a = 0; a < enemiesData.length; a++){
-		var abc = Math.floor(Math.random() * 2);
-		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
-	}
-	*/
-	//wave = new Wave(0, 10);
-	//wave.init();
-	
 	//checking is pad connected
 	var checkGP = setInterval(function (){
 		if(navigator.getGamepads()[0]) {
@@ -367,8 +327,11 @@ function init(){
 		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
 	}
 	
+	level = new Level(0);
+
 	//start game 
-	console.log(enemies.length);
+	if(ls.getItem("base") == null)
+		ls.setItem("base", 0);
 	gameLoop();
 
 };
@@ -386,15 +349,8 @@ function gameLoop() {
 };
 // function to update everything
 function update(deltaTime){
-	
-	if(enemies.length == 0){
-		gun.richocetCount++;
-		player.health = player.maxHealth;
-		waveLevel += 1;
-		wave = null;
-		wave = new Wave(0, waveLevel);
-		wave.init();
-	}
+
+	level.update(deltaTime);
 	
 	//calculation crosshair position
 	if(useGamepad ){
@@ -412,31 +368,6 @@ function update(deltaTime){
 	}
 	else {
 		crosshairPosition = new SAT.Vector(mouse.x, mouse.y);
-	}
-
-	//calculating enemies 
-	for(var a = 0; a < enemies.length; a++){
-		enemies[a].exist(deltaTime, a);
-	}
-	
-	//checking player collision
-	for(var a = 1; a < obstacles.length; a++){
-
-		var response = new SAT.Response();
-		var collide = SAT.testPolygonCircle(obstacles[a].toPolygon(), player.collider, response)
-
-		if(collide){
-
-			collisonResponse(response, player, obstacles[a]);
-			player.pos.x = player.collider.pos.x;
-			player.pos.y = player.collider.pos.y;
-
-		}
-		else {
-			player.collider.pos.x = player.pos.x;
-			player.collider.pos.y = player.pos.y;
-			
-		}			
 	}
 
 	//playerstuff
@@ -480,14 +411,9 @@ function update(deltaTime){
 	}
 	*/
 
-	//calculating bullets
-	for(var a = 0; a < bullets.length; a++){
-		bullets[a].exist(deltaTime, a);
-	}
-
 	//dmgtext
 	for(var a = 0; a < dmgText.length; a++){
-		dmgText[a].exist(deltaTime, a);
+		dmgText[a].update(deltaTime, a);
 	}
 
 	//gradient stuff
@@ -499,46 +425,6 @@ function update(deltaTime){
 	//variable to render object in right position
 	viewX = player.pos.x - CANVASW/2;
 	viewY = player.pos.y - CANVASH/2;
-
-	if(followSearch && !isFollowing && enemies.length > 0 && gun.bulletType != "multishoot"){
-		distanceToEnemies = [];
-		for(var a = 0; a < enemies.length; a++){
-			var toPlayerX = enemies[a].collider.pos.x - player.collider.pos.x;
-			var toPlayerY = enemies[a].collider.pos.y - player.collider.pos.y;
-			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-
-			distanceToEnemies[a] = toPlayer;							
-
-		}
-
-		toLastEnemy = distanceToEnemies[0];		
-		followEnemy = 0;
-
-		for(var a = 0; a < distanceToEnemies.length; a++){
-			if(distanceToEnemies[0] <= toLastEnemy)
-				followEnemy = a;
-		}
-
-		isFollowing = true;
-		followSearch = false;
-		inputTimer = inputCooldown;
-	}
-
-	if(followEnemy != null && distanceToEnemies[followEnemy] > 1000)
-		isFollowing = false;
-
-	if(followSearch && isFollowing){
-		isFollowing = false;
-		followSearch = false;
-		inputTimer = inputCooldown;
-	}
-
-	if(isFollowing && followEnemy != null){
-		mouse.x = enemies[followEnemy].collider.pos.x - viewX;
-		mouse.y = enemies[followEnemy].collider.pos.y - viewY;
-	}
-	
-
 
 	//timers		
 	if(bulletTimer > 0) bulletTimer -= deltaTime;
@@ -564,7 +450,6 @@ function update(deltaTime){
 };
 // function to render everything
 function render(){
-
 	//clearing canvas
 	ctx.clearRect(0, 0, CANVASW, CANVASH);	
 	//IS IT NESESARY?!
@@ -629,8 +514,6 @@ function render(){
 
 				ctx.strokeRect(a * pathfindingNodesScale - viewX, b * pathfindingNodesScale - viewY, pathfindingNodesScale,pathfindingNodesScale)
 
-				//ctx.font = "5px Georgia"
-				//ctx.fillText( a + "|" + b, a * pathfindingNodesScale - viewX + 5, b * pathfindingNodesScale + 5 - viewY);
 			}
 	}	
 
@@ -639,31 +522,11 @@ function render(){
 	
 	//walls
 	//ctx.drawImage(walls, player.pos.x - CANVASW/2, player.pos.y - CANVASH/2, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
-
-	//bullets draw
-	for(var a = 0; a < bullets.length; a++){
-		bullets[a].draw();
-	}
-
-	//colliders draw
-	for(var a = 1; a < obstacles.length; a++)
-		renderStrokeColliderBox(a, obstacles[a], "black", viewX, viewY);
-
 	
+	level.draw();
 	renderStrokeColliderCircle(player.collider, "green", viewX, viewY);
 
-	//enemies draw
-	for(var a = 0; a < enemies.length; a++){
-		enemies[a].draw();
-	}
-
-	for(var a = 0; a < bullets.length; a++){
-		bullets[a].multishotDraw();
-	}	
-
-	//ctx.fillStyle = "black";
-	//ctx.fillRect(player.pos.x - viewX, player.pos.y - viewY, 5,5)  
-	
+	//GUI STUFF
 	//cool effects
 	if(postE)
 		postEffects();
@@ -703,7 +566,6 @@ function render(){
 		ctx.strokeText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 		ctx.fillText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 	}
-
 	
 	//game over
 	if(!playerAlive){
@@ -713,20 +575,14 @@ function render(){
 		ctx.fillStyle = "white";
 		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2)		
 		
-			if(ls.getItem("best") != null) {
-			var abc = ls.getItem("base");
-			console.log(abc)
-			if(waveLevel > abc)
-				ls.setItem("base", waveLevel);
-			ctx.font = "20px Pixel";
-			ctx.fillText("Best: " + abc, 0, 100);
-		}
-		else {
-			ls.setItem("base", waveLevel);
-		}	
+		var abc = ls.getItem("base");
+		if(level.waveDif > abc)
+			ls.setItem("base", level.waveDif);
+		ctx.font = "20px Pixel";
+		ctx.fillText("Best: " + abc, 0, 100);
 		
 		ctx.font = "20px Pixel";
-		ctx.fillText("Your score: " + waveLevel, 0, 80);
+		ctx.fillText("Your score: " + level.waveDif, 0, 80);
 	}	
 
 	//win
@@ -738,12 +594,7 @@ function render(){
 		ctx.strokeStyle = "back";	
 		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
 		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2)
-	}
-	
-	//wave info
-	if(wave != null)
-		wave.draw();	
-	
+	}	
 };
 //player shooting
 function shootBullet(origin, direction){
@@ -775,14 +626,12 @@ function shootBullet(origin, direction){
 			dir.rotate(angle1)
 			dir.normalize();
 
-			bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
+			level.bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
 
 		}
-	}
-	else{
+	} else {
 
-		bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
-
+		level.bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
 	}
 
 	bulletTimer = gun.bulletSpawnCooldown;
@@ -898,7 +747,8 @@ function handleInput(deltaTime){
 	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0){
 		inputTimer = inputCooldown;
 		var abc = Math.floor(Math.random() * 2);
-		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[0].startPos.x, enemiesData[0].startPos.y, enemiesData[0].radius, enemiesData[0].waypoints, enemiesData[0].exp));
+		var radius = enemiesData[0].hp/enemiesSizeScale
+		level.wave.enemies.push(new Enemy(enemiesTypes[abc], enemiesData[0].startPos.x, enemiesData[0].startPos.y, radius, enemiesData[0].waypoints, enemiesData[0].hp));
 	}
 };
 function makeAngle(x1,x2,y1,y2){
@@ -964,21 +814,12 @@ function collisonResponse(response, obj1, obj2){
 };
 function levelRestart(){
 
-	
-
-
 	//player
 	delete player;
 	player = new Player(playerStartPos.x,playerStartPos.y);
 
 	//enemies
-	enemies = [];
-	/*
-	for(var a = 0; a < enemiesData.length; a++){
-		var abc = Math.floor(Math.random() * 2);
-		enemies.push(new Enemy(enemiesTypes[abc], enemiesData[a].startPos.x, enemiesData[a].startPos.y, enemiesData[a].radius, enemiesData[a].waypoints, enemiesData[a].exp))
-	}
-	*/
+	level.wave.enemies = [];
 	
 	waveLevel = 0;
 	
@@ -987,7 +828,7 @@ function levelRestart(){
 	followEnemy = null;
 
 	//bullets
-	bullets = [];
+	level.bullets = [];
 
 	//is player alive?
 	playerAlive = true;
@@ -1005,17 +846,6 @@ function levelRestart(){
 
 //################ v 0.1 in development ###################
 
-// - Player can walking and shooting
-// - Enemies can die
-// - Player never lost enemies attantion
-// - Player can die
-// - Level restart
-// - Added health bars for enemies nad player
-// - Floating damage text
-// - Added gamepad support
-// - Added crosshair for mouse and gamepad
-// - Added types of weapons
-
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
 //Adding types of enemies
 //2 types of enemies (range and melee) so far 
@@ -1027,7 +857,6 @@ function levelRestart(){
 //enemies cover system
 //enemies dodge system
 //perk system
-//cover - dynamic cover nodes list
 //player stats system
 //weapons stats system
 //player can restore hp
@@ -1035,14 +864,9 @@ function levelRestart(){
 //shield enemies bullet richocet
 //lots of bullets
 
-//################ OPTIONALS FEATURE ###################
 //gui / menus
 //node js 
 //beautify code
-
-
-
-//################ CRUNCH ###################\
 //waves
 //perks
 //waves add bonus

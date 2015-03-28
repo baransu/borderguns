@@ -21,7 +21,7 @@ function Bullet(type, richocet, crit, dmg, img, x, y, radius, speed, deltaV, thi
 	this.freeFloat = false;
 
 };
-Bullet.prototype.exist = function(deltaTime, id){
+Bullet.prototype.update = function(deltaTime, id){
 	
 	//only for player
 	if(this.type == "multishot"){
@@ -91,32 +91,32 @@ Bullet.prototype.exist = function(deltaTime, id){
 				};
 				dmgText.push(new FloatingText(player.collider.pos.x, player.collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
 				bloodEffectTimer = bloodEffectDuration;
-				bullets.splice(id, 1);
+				level.bullets.splice(id, 1);
 			}		
 		}		
 	}
 
 	//richochets
 	if(this.freeFloat)
-		for(var a = 0; a < obstacles.length; a++){
+		for(var a = 0; a < level.obstacles.length; a++){
 
-			if(this.collider.pos.x - this.radius <= obstacles[a].pos.x + obstacles[a].w && this.collider.pos.x + this.radius >= obstacles[a].pos.x &&
-			   this.collider.pos.y - this.radius <= obstacles[a].pos.y + obstacles[a].h && this.collider.pos.y + this.radius >= obstacles[a].pos.y){
+			if(this.collider.pos.x - this.radius <= level.obstacles[a].pos.x + level.obstacles[a].w && this.collider.pos.x + this.radius >= level.obstacles[a].pos.x &&
+			   this.collider.pos.y - this.radius <= level.obstacles[a].pos.y + level.obstacles[a].h && this.collider.pos.y + this.radius >= level.obstacles[a].pos.y){
 
 				//left
-				if(this.lastPos.x <= obstacles[a].pos.x && this.lastPos.y >= obstacles[a].pos.y && this.lastPos.y <= obstacles[a].pos.y + obstacles[a].h){
+				if(this.lastPos.x <= level.obstacles[a].pos.x && this.lastPos.y >= level.obstacles[a].pos.y && this.lastPos.y <= level.obstacles[a].pos.y + level.obstacles[a].h){
 					this.deltaV.x *= -1;
 				}
 				//top
-				if(this.lastPos.y <= obstacles[a].pos.y && this.lastPos.x >= obstacles[a].pos.x && this.lastPos.x <= obstacles[a].pos.x + obstacles[a].w){
+				if(this.lastPos.y <= level.obstacles[a].pos.y && this.lastPos.x >= level.obstacles[a].pos.x && this.lastPos.x <= level.obstacles[a].pos.x + level.obstacles[a].w){
 					this.deltaV.y *= -1;
 				}
 				//right
-				if(this.lastPos.x >= obstacles[a].pos.x + obstacles[a].w && this.lastPos.y >= obstacles[a].pos.y && this.lastPos.y <= obstacles[a].pos.y + obstacles[a].h){
+				if(this.lastPos.x >= level.obstacles[a].pos.x + level.obstacles[a].w && this.lastPos.y >= level.obstacles[a].pos.y && this.lastPos.y <= level.obstacles[a].pos.y + level.obstacles[a].h){
 					this.deltaV.x *= -1;
 				}
 				//down
-				if(this.lastPos.y >= obstacles[a].pos.y + obstacles[a].h && this.lastPos.x >= obstacles[a].pos.x && this.lastPos.x <= obstacles[a].pos.x + obstacles[a].w){
+				if(this.lastPos.y >= level.obstacles[a].pos.y + level.obstacles[a].h && this.lastPos.x >= level.obstacles[a].pos.x && this.lastPos.x <= level.obstacles[a].pos.x + level.obstacles[a].w){
 					this.deltaV.y *= -1;
 				}
 
@@ -126,20 +126,20 @@ Bullet.prototype.exist = function(deltaTime, id){
 		}
 
 	if(this.richocetTimes < 0){
-		bullets.splice(id, 1);
+		level.bullets.splice(id, 1);
 	}
 
 	this.lastPos = new SAT.Vector(this.collider.pos.x, this.collider.pos.y);
 
 	if(this.freeFloat){		
-		for(var a = 0; a < enemies.length; a++){
+		for(var a = 0; a < level.wave.enemies.length; a++){
 
-			var col = SAT.testCircleCircle(enemies[a].collider, this.collider);
+			var col = SAT.testCircleCircle(level.wave.enemies[a].collider, this.collider);
 			
 			if(col && playerAlive){
 				if(this.fromPlayer){
-					bullets.splice(id, 1);
-					enemies[a].health -= this.damage;
+					level.bullets.splice(id, 1);
+					level.wave.enemies[a].health -= this.damage;
 					//moving it to bullets variable and based on damage type 
 					var mainColor = {
 						r: 255,
@@ -151,17 +151,17 @@ Bullet.prototype.exist = function(deltaTime, id){
 						g: 0,
 						b: 0,
 					};
-					dmgText.push(new FloatingText(enemies[a].collider.pos.x, enemies[a].collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
+					dmgText.push(new FloatingText(level.wave.enemies[a].collider.pos.x, level.wave.enemies[a].collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
 			}
 
-				bullets.splice(id, 1);
+				level.bullets.splice(id, 1);
 				break;
 			}
 		}
 	}
 
 	if(this.collider.pos.x < -2000 || this.collider.pos.y < -2000 || this.collider.pos.x > 4000|| this.collider.pos.y > 2000){
-		bullets.splice(id, 1);
+		level.bullets.splice(id, 1);
 	}	
 
 };
@@ -179,7 +179,4 @@ Bullet.prototype.multishotDraw = function(){
 			renderStrokeColliderCircle(this.collider, "red", viewX, viewY);
 		else
 			renderStrokeColliderCircle(this.collider, "yellow", viewX, viewY);
-};
-Bullet.prototype.obstacleCollide = function(){
-
 };

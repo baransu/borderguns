@@ -13,7 +13,7 @@ function FloatingText(x, y, text, crit, color1, color2){
   	this.vy = Math.random() * 10 - 2;
 }
 
-FloatingText.prototype.exist = function(deltaTime, id){
+FloatingText.prototype.update = function(deltaTime, id){
 
 	this.lifeTime -= deltaTime;
 	this.transparency -= deltaTime;
