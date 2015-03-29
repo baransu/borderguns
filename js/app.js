@@ -821,7 +821,7 @@ function levelRestart(){
 	//enemies
 	level.wave.enemies = [];
 	
-	waveLevel = 0;
+	level.waveDif = 0;
 	
 	isFollowing = false;
 	followSearch = false;
