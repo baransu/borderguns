@@ -1,7 +1,7 @@
-function GUI(){
-
+function GUI()
+{
 }
-GUI.prototype.draw = function(){
-	
 
-};
+GUI.prototype.draw = function()
+{
+}

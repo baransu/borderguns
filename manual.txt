@@ -8,8 +8,8 @@ var gun = {
 
 F - dodanie przeciwnika
 
-Q - autoaim (nie dziala dla "multishoot")
-
 Z - dev grid/ pathfinding nodes
 
 R - restart poziomu
+
+E - cool effects

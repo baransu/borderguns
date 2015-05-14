@@ -1,9 +1,14 @@
+/* global input */
+/* global Bullet */
+/* global Graph */
+/* global Player */
+
 //canvas tech stuff
 var CANVASW,
 	CANVASH;
 var canvas;
 var ctx;
-var lastTime;
+var lastTime = Date.now();
 //input
 var mouse = {};
 var mouseLeftPressed = false;
@@ -30,9 +35,9 @@ var meleeAttackTimer = 0;
 var meleeAttackCooldown = 0.5;
 var playerAlive = true;
 var playerStartPos = new SAT.Vector();
-var playerInput = true;
 var playerHealthPercentage;
 var levelBarPercentage;
+//level exp
 var playerLevelFrames = [
 	0, 100, 200, 300, 400, 500,
 ];
@@ -43,9 +48,14 @@ var useGamepad = false;
 //ai/ pathfinding
 var pathfindingNodes = [];
 var pathfindingNodesScale = 20;
-//evel size 1920x1080
-var nSizeX = 1920/pathfindingNodesScale;
-var nSizeY = 1080/pathfindingNodesScale;
+
+var TILESIZE = 64;
+
+var levelWidth = TILESIZE * 100;
+var levelHeight = TILESIZE * 100;
+
+var nSizeX = levelWidth/pathfindingNodesScale;
+var nSizeY = levelHeight/pathfindingNodesScale;
 var pathfindingGraph;
 var AIWallOffsetL1 = 2;
 var AIWallOffsetL2 = 1;
@@ -109,13 +119,13 @@ var distanceToEnemies = [];
 var followSearch = false;
 
 var gun = {
-	bulletType: "simple",
-	richocetCount: 1,
+	bulletType: "multishot",
+	richocetCount: 10000,
 	bulletSpawnCooldown: 0,
 	bulletSpeed: 1500,
-	shotgunBullets: 2,
+	shotgunBullets: 50,
 	bulletSize: 2,
-}
+};
 
 var enemiesTypes = [
 	"ranged",
@@ -136,10 +146,19 @@ var enemiesSizeScale = 30;
 
 var level = null;
 
-// function to initizalize whole game
-function init(){
+var wallSize = 64;
+
+
+function load()
+{
 	canvas = document.getElementById("canvas");
 	ctx = canvas.getContext("2d");
+
+	//stuff for smooth animations?
+	ctx.mozImageSmoothingEnabled = false;
+	ctx.webkitImageSmoothingEnabled = false;
+	ctx.msImageSmoothingEnabled = false;
+	ctx.imageSmoothingEnabled = false;
 
 	document.addEventListener('mousemove', function(e){
 		if(!isFollowing){			
@@ -191,10 +210,10 @@ function init(){
 	obstacles[0] = new SAT.Box(new SAT.Vector( 0, 0), 1, 1);
 
 	//walls
-	obstacles[1] = new SAT.Box(new SAT.Vector( 0, 40), 40, 1000);
-	obstacles[2] = new SAT.Box(new SAT.Vector( 40, 1040), 1820, 40);
-	obstacles[3] = new SAT.Box(new SAT.Vector( 1860, 40), 60, 1000);
-	obstacles[4] = new SAT.Box(new SAT.Vector( 40, 1), 1820, 40);
+	obstacles[1] = new SAT.Box(new SAT.Vector( 0, 0), wallSize, levelHeight - wallSize);
+	obstacles[2] = new SAT.Box(new SAT.Vector( wallSize, levelHeight - wallSize), levelHeight - wallSize, wallSize);
+	obstacles[3] = new SAT.Box(new SAT.Vector( levelWidth - wallSize, wallSize), wallSize, levelHeight - wallSize);
+	obstacles[4] = new SAT.Box(new SAT.Vector( wallSize, 0), levelHeight - wallSize, wallSize);
 
 	//fillars
 	obstacles[5] = new SAT.Box(new SAT.Vector( 200, 200), 200, 200);
@@ -234,7 +253,7 @@ function init(){
 	for(var a = 0; a < nSizeX;a++){
 		pathfindingNodes[a]=[];
 		for(var b = 0; b < nSizeY; b++)
-			pathfindingNodes[a][b] = 1
+			pathfindingNodes[a][b] = 1;
 	}
 
 	//creating pathfinding nodes
@@ -293,7 +312,7 @@ function init(){
 
 	//adding player
 	player = new Player(playerStartPos.x, playerStartPos.y);
-	
+
 	//diagonal pathfinding
 	pathfindingGraph = new Graph(pathfindingNodes)
 	pathfindingGraph.diagonal = true;
@@ -332,10 +351,11 @@ function init(){
 	//start game 
 	if(ls.getItem("base") == null)
 		ls.setItem("base", 0);
+
 	gameLoop();
 
-};
-//game loop
+}
+
 function gameLoop() {
     var now = Date.now();
     var deltaTime = (now - lastTime) / 1000.0;
@@ -346,82 +366,27 @@ function gameLoop() {
 
     lastTime = now;
     window.requestAnimationFrame(gameLoop);
-};
-// function to update everything
+}
+
 function update(deltaTime){
 
 	level.update(deltaTime);
-	
-	//calculation crosshair position
-	if(useGamepad ){
-		if(rightX > gamepadRightOffset || rightX < -gamepadRightOffset || rightY > gamepadRightOffset || rightY < -gamepadRightOffset){
-			var crosshairAngle = makeAngle(CANVASW/2, CANVASW/2 + rightX, CANVASH/2, CANVASH/2 + rightY);
-		}
-		else {
-			var crosshairAngle = makeAngle(CANVASW/2, CANVASW/2 + leftX, CANVASH/2, CANVASH/2 + leftY);
-		}
-		
-		var tempX = CANVASW/2 + Math.cos(crosshairAngle) * 250;
-		var tempY = CANVASH/2 + Math.sin(crosshairAngle) * 250;
-		crosshairPosition = new SAT.Vector(tempX, tempY);
 
-	}
-	else {
-		crosshairPosition = new SAT.Vector(mouse.x, mouse.y);
-	}
-
-	//playerstuff
-	playerHealthPercentage = player.health/player.maxHealth;
-
-	//player roation toward mouse
-	mouseToPlayerAngle = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
-	
-	//gamepad shooting
-	if(useGamepad && rightTrigger.pressed === true && bulletTimer === 0 && playerInput){
-		var temp = new SAT.Vector();
-
-		if(rightX > gamepadRightOffset || rightX < -gamepadRightOffset || rightY > gamepadRightOffset || rightY < -gamepadRightOffset){
-			temp = new SAT.Vector(rightX, rightY);
-		}
-		else
-			temp = playerForward;
-
-		temp.normalize();
-		shootBullet(player.collider.pos, temp);
-	}
-
-	//mouse shooting
-	if(mouseLeftPressed && bulletTimer === 0 && playerInput){
-		var temp = new SAT.Vector((mouse.x - CANVASW/2), (mouse.y - CANVASH/2));
-		temp.normalize();
-
-		shootBullet(player.collider.pos, temp);
-	}
-	
-	//hp calculation
-	if(player.health < 0) player.health = 0;
-	if(player.health > player.maxHealth) player.health = player.maxHealth;
-	if(player.health == 0) player.die();
-
-	/*
-	//game win
-	if(enemies.length == 0){
-		win = true;
-		playerInput = false;
-	}
-	*/
+	player.update(deltaTime);
 
 	//dmgtext
-	for(var a = 0; a < dmgText.length; a++){
+	for(var a = 0; a < dmgText.length; a++)
+	{
 		dmgText[a].update(deltaTime, a);
 	}
-
+	
 	//gradient stuff
-	if(bgGradient == 0 && calcGradient == false){
+	if(bgGradient == 0 && calcGradient == false)
+	{
 		bgGradient = 1;
 		calcGradient = true;
 	}
-
+	
 	//variable to render object in right position
 	viewX = player.pos.x - CANVASW/2;
 	viewY = player.pos.y - CANVASH/2;
@@ -436,22 +401,26 @@ function update(deltaTime){
 	if(inputTimer > 0) inputTimer -= deltaTime;
 	if(inputTimer < 0) inputTimer = 0;
 
-	if(bloodEffectTimer > 0){
+	if(bloodEffectTimer > 0)
+	{
 		bloodEffect = true;
 		bloodEffectTimer -= deltaTime;
 	}
-	if(bloodEffectTimer < 0){
+	if(bloodEffectTimer < 0)
+	{
 		bloodEffect = false;
 		bloodEffectTimer = 0;
 	}
 
 	if(bloodEffectTimer == 0) bloodEffect = false;
 	
-};
-// function to render everything
-function render(){
+}
+
+function render()
+{
 	//clearing canvas
-	ctx.clearRect(0, 0, CANVASW, CANVASH);	
+	ctx.clearRect(0, 0, CANVASH, CANVASH);		
+	
 	//IS IT NESESARY?!
 	//changing background gradient color
 	if(calcGradient){
@@ -490,11 +459,12 @@ function render(){
 
 	//background
 	ctx.fillStyle = my_gradient;
+	
 	//ctx.fillStyle = "grey";
 	ctx.fillRect(0,0,CANVASW,CANVASH);
 
 	//floor
-	ctx.fillStyle = "#2C322B"
+	ctx.fillStyle = "#2C322B";
 	ctx.fillRect(0 - viewX, 0 - viewY, 1920, 1080);
 	//ctx.drawImage(floor, viewX, viewY, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
 
@@ -504,7 +474,7 @@ function render(){
 		for(var a = 0; a < nSizeX; a++)
 			for(var b = 0; b < nSizeY; b++){
 				if(pathfindingNodes[a][b] == 1)
-					ctx.strokeStyle = "magenta"
+					ctx.strokeStyle = "magenta";
 				else if(pathfindingNodes[a][b] == 2)
 					ctx.strokeStyle = "teal";
 				else if(pathfindingNodes[a][b] == 5)
@@ -512,20 +482,16 @@ function render(){
 				else
 					ctx.strokeStyle = "black";
 
-				ctx.strokeRect(a * pathfindingNodesScale - viewX, b * pathfindingNodesScale - viewY, pathfindingNodesScale,pathfindingNodesScale)
+				ctx.strokeRect(a * pathfindingNodesScale - viewX, b * pathfindingNodesScale - viewY, pathfindingNodesScale,pathfindingNodesScale);
 
 			}
 	}	
 
-	//player
-	//drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - (128/2), CANVASH/2 - (128/2), 128, 128, mouseToPlayerAngle);
-	
-	//walls
-	//ctx.drawImage(walls, player.pos.x - CANVASW/2, player.pos.y - CANVASH/2, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
+	//player	
 	
 	level.draw();
-	renderStrokeColliderCircle(player.collider, "green", viewX, viewY);
-
+	player.draw();
+	
 	//GUI STUFF
 	//cool effects
 	if(postE)
@@ -538,12 +504,12 @@ function render(){
 	
 	ctx.lineWidth = 1;
 
-	if(!win && playerAlive){
+	if(!win && player.playerAlive){
 		//hp bar
 		ctx.strokeStyle = "white";
-		ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50)
+		ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50);
 		ctx.fillStyle = "red";
-		ctx.fillRect(CANVASW/2 - 250/2, CANVASH - 50, 250 * playerHealthPercentage, 50)
+		ctx.fillRect(CANVASW/2 - 250/2, CANVASH - 50, 250 * player.playerHealthPercentage, 50);
 
 		//hp bar text
 		ctx.fillStyle = "white";
@@ -557,7 +523,7 @@ function render(){
 
 	}
 
-	if(win || !playerAlive){
+	if(win || !player.playerAlive){
 
 		//copyrights
 		ctx.fillStyle = "white";
@@ -568,12 +534,12 @@ function render(){
 	}
 	
 	//game over
-	if(!playerAlive){
-		ctx.fillStyle = "rgba(0,0,0,0.7)"
+	if(!player.playerAlive){
+		ctx.fillStyle = "rgba(0,0,0,0.7)";
 		//ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
-		ctx.font = "50px Pixel"
+		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
-		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2)		
+		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2);		
 		
 		var abc = ls.getItem("base");
 		if(level.waveDif > abc)
@@ -593,28 +559,32 @@ function render(){
 		ctx.fillStyle = "white";
 		ctx.strokeStyle = "back";	
 		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
-		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2)
-	}	
+		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
+	}
+	ctx.fillStyle = "black";
+	ctx.fillRect(CANVASW/2, CANVASH/2, 10,10)
 };
 //player shooting
 function shootBullet(origin, direction){
 	//damage calculation and spawning bullets
-	var dmg = 0
-	var crit = false
-	dmg = 0 + rollDice(10, 10)
-	dmg = Math.min(dmg, 0 + rollDice(10, 10))
-	dmg = Math.max(dmg, 0 + rollDice(10, 10))
-	if (random(100) < critChance){
-	    dmg += 0 + rollDice(10, 10)
+	var dmg = 0;
+	var crit = false;
+	dmg = 0 + rollDice(10, 10);
+	dmg = Math.min(dmg, 0 + rollDice(10, 10));
+	dmg = Math.max(dmg, 0 + rollDice(10, 10));
+	if (random(100) < critChance)
+	{
+	    dmg += 0 + rollDice(10, 10);
 		crit = true;
 	}
-	if(gun.bulletType == "shotgun"){
-
-
+	
+	if(gun.bulletType == "shotgun")
+	{
 		var bCount = Math.floor(Math.abs(gun.shotgunBullets)/2);
 		if(bCount % 2 == 0)
 			bCount--;
-		for(var a = -bCount; a <= bCount; a++){
+		for(var a = -bCount; a <= bCount; a++)
+		{
 
 			var dir = new SAT.Vector(50, 0);
 			var angle1 = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
@@ -623,14 +593,15 @@ function shootBullet(origin, direction){
 
 			if (angle1 < 0)	angle1 = angle1 + Math.PI*2;
 
-			dir.rotate(angle1)
+			dir.rotate(angle1);
 			dir.normalize();
 
 			level.bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(dir.x, dir.y), true, player));
 
 		}
-	} else {
-
+	}
+	else
+	{
 		level.bullets.push(new Bullet(gun.bulletType, gun.richocetCount, crit, dmg, bullet, origin.x, origin.y, gun.bulletSize, gun.bulletSpeed, new SAT.Vector(direction.x, direction.y), true, player));
 	}
 
@@ -643,10 +614,10 @@ function postEffects(){
 		ctx.strokeStyle = "rgba(0,0,0,"+ (Math.random() * (0.05 - 0) + 0) +")";
 		ctx.strokeRect(0,a * 5,CANVASW,5);
 	}
-	if(bloodEffect || !playerAlive)
-		gradientCircleFilterBlood(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "255,0,0")
+	if(bloodEffect || !player.playerAlive)
+		gradientCircleFilterBlood(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "255,0,0");
 	else
-		gradientCircleFilter(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "0,0,0")
+		gradientCircleFilter(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "0,0,0");
 }
 function gradientCircleFilter(x, y, r, c) {
     ctx.beginPath();
@@ -668,18 +639,20 @@ function gradientCircleFilterBlood(x, y, r, c) {
     ctx.fill();
 };
 function handleInput(deltaTime){
-	if(canGame()) { 
-        $(window).on("gamepadconnected", function() {
-            console.log("connection event");
-            useGamepad = true;
-        });
-        $(window).on("gamepaddisconnected", function() {
-            console.log("disconnection event");
-            useGamepad = false;
-        });
-    }
+	
+//	if(canGame())
+//	{ 
+//        $(window).on("gamepadconnected", function() {
+//            console.log("connection event");
+//            useGamepad = true;
+//        });
+//        $(window).on("gamepaddisconnected", function() {
+//            console.log("disconnection event");
+//            useGamepad = false;
+//        });
+//    }
 
-	if(playerInput){
+	if(player.playerInput){
 		if(useGamepad){
 			var gp = navigator.getGamepads()[0];
 		    leftX = gp.axes[0];
@@ -757,13 +730,13 @@ function makeAngle(x1,x2,y1,y2){
 function random(int){
 	return Math.floor(Math.random() * int);
 };
-function canGame() {
-    return "getGamepads" in navigator;
-};
+//function canGame() {
+//    return "getGamepads" in navigator;
+//};
 function rollDice(N, S){
-    var value = 0    
+    var value = 0;    
     for(var a = 0; a < N; a++) value += random(S + 1);    
-    return value
+    return value;
 };
 function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle){
 	ctx.save();		
@@ -772,13 +745,13 @@ function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, an
 	ctx.drawImage(source, sX, sY, sWidth, sHeight, -(width/2), -(height/2), width, height);
 	ctx.restore();
 };
-function renderStrokeColliderBox(name, collider, color, viewX, viewY){
+function renderStrokeColliderBox(collider, color, viewX, viewY){
 	ctx.fillStyle = color;
 	ctx.fillRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
 	//ctx.strokeStyle = color;
 	//ctx.strokeRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
-	ctx.font = "20px Georgia"
-	ctx.fillText(name, collider.pos.x - viewX, collider.pos.y + 20 - viewY);
+	//ctx.font = "20px Georgia";
+	//ctx.fillText(name, collider.pos.x - viewX, collider.pos.y + 20 - viewY);
 };
 function renderStrokeColliderCircle(collider, color, viewX, viewY){
 	ctx.beginPath();
@@ -816,7 +789,7 @@ function levelRestart(){
 
 	//player
 	delete player;
-	player = new Player(playerStartPos.x,playerStartPos.y);
+	player = new Player(playerStartPos.x, playerStartPos.y);
 
 	//enemies
 	level.wave.enemies = [];
@@ -831,10 +804,10 @@ function levelRestart(){
 	level.bullets = [];
 
 	//is player alive?
-	playerAlive = true;
+	player.playerAlive = true;
 	
 	//can player control his character?
-	playerInput = true;
+	player.playerInput = true;
 
 	//is game won
 	win = false;
@@ -843,14 +816,8 @@ function levelRestart(){
 };
 
 //################ CODE NAME: BORDERGUNS ###################
-
 //################ v 0.1 in development ###################
-
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
-//Adding types of enemies
-//2 types of enemies (range and melee) so far 
-//melee run toward player and dodge
-//range shoot to player and use cover/dodge
 //damage calculation system
 //enemies impact to bullets
 //sprites / art
@@ -859,15 +826,12 @@ function levelRestart(){
 //perk system
 //player stats system
 //weapons stats system
-//player can restore hp
 //shields / restore over time
 //shield enemies bullet richocet
-//lots of bullets
 
 //gui / menus
 //node js 
 //beautify code
-//waves
 //perks
 //waves add bonus
 //bigger lavel

@@ -1,4 +1,7 @@
-function Enemy(type, x, y, radius, waypoints, hp){
+/* global astar */
+
+function Enemy(type, x, y, radius, waypoints, hp)
+{
 	this.enemyType = type;
 
 	this.radius = radius;
@@ -45,15 +48,17 @@ function Enemy(type, x, y, radius, waypoints, hp){
 	this.bulletsSpeed = 1000;
 
 	this.canShoot = false;
+}
 
-};
-Enemy.prototype.update = function(deltaTime, id){
-
-	if(this.waypoints != null && this.useWaypoints){
+Enemy.prototype.update = function(deltaTime, id)
+{
+	if(this.waypoints != null && this.useWaypoints)
+	{
 
 		var toNext = Math.sqrt(Math.pow((this.waypoints[this.curWay].x - this.collider.pos.x),2) + Math.pow((this.waypoints[this.curWay].y - this.collider.pos.y),2));	
 		
-		if(toNext <= toPointOffset){
+		if(toNext <= toPointOffset)
+		{
 			if((this.curWay + 1) != this.waypoints.length)
 				this.curWay++;
 			else
@@ -64,24 +69,24 @@ Enemy.prototype.update = function(deltaTime, id){
 		var deltaY = this.waypoints[this.curWay].y - this.collider.pos.y;
 
 		this.deltaV = new SAT.Vector(deltaX, deltaY).normalize();
-
 	}
 
 	//make angle
-	this.angle = makeAngle(this.collider.pos.x, this.forward.x, this.collider.pos.y, this.forward.y)
+	this.angle = makeAngle(this.collider.pos.x, this.forward.x, this.collider.pos.y, this.forward.y);
 
-	var toPlayerAngle = makeAngle(this.collider.pos.x, player.collider.pos.x, this.collider.pos.y, player.collider.pos.y)
+	var toPlayerAngle = makeAngle(this.collider.pos.x, player.collider.pos.x, this.collider.pos.y, player.collider.pos.y);
 	this.forward.x = this.collider.pos.x + Math.cos(toPlayerAngle) * (this.radius + 10);
 	this.forward.y = this.collider.pos.y + Math.sin(toPlayerAngle) * (this.radius + 10);
 
-	if(playerAlive){
+	if(player.playerAlive)
+	{
 		//look for player
 		var toPlayerX = player.collider.pos.x - this.collider.pos.x;
 		var toPlayerY = -(player.collider.pos.y - this.collider.pos.y);
 		var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
 
-		if(toPlayer <= this.radarLength){
-
+		if(toPlayer <= this.radarLength)
+		{
 			var toPointX = this.forward.x - this.collider.pos.x;
 			var toPointY = -(this.forward.y - this.collider.pos.y);
 
@@ -93,8 +98,8 @@ Enemy.prototype.update = function(deltaTime, id){
 
 			var acos = Math.acos(cos);
 
-			if(acos < Math.PI/2){
-
+			if(acos < Math.PI/2)
+			{
 				this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),[
 					new SAT.Vector(),
 					new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
@@ -105,11 +110,13 @@ Enemy.prototype.update = function(deltaTime, id){
 				var obstaclesCol = true;
 				var obstaclesCount = 0;
 				for(var a = 1; a < obstacles.length; a++){
-					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon())
-					if(this.toPlayerCollision) {								
+					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon());
+					if(this.toPlayerCollision)
+					{								
 						break;					
 					}
-					else {
+					else
+					{
 						this.playerIsInRange = true;
 					}
 				}
@@ -118,8 +125,10 @@ Enemy.prototype.update = function(deltaTime, id){
 	}
 
 	//follow player
-	if(this.playerIsInRange && playerAlive){
-		if(this.enemyType == "melee"){
+	if(this.playerIsInRange && player.playerAlive)
+	{
+		if(this.enemyType == "melee")
+		{
 			this.useWaypoints = false;
 			this.toNodes = this.toNode(this.collider.pos)
 
@@ -135,15 +144,17 @@ Enemy.prototype.update = function(deltaTime, id){
 			if(meleeContact){
 				this.deltaV = new SAT.Vector();
 
-				if(this.attackTimer === 0 && playerAlive){
+				if(this.attackTimer === 0 && player.playerAlive){
 					this.deltaV = new SAT.Vector();
 
-					var dmg = 0
-					dmg = 0 + rollDice(10,10)
-					dmg = Math.min(dmg, 0 + rollDice(10, 10))
-					dmg = Math.max(dmg, 0 + rollDice(10., 10))
-					if (random(100) < enemiesCrit){
-					    dmg += 0 + rollDice(10, 10)
+					var dmg = 0;
+					dmg = 0 + rollDice(10,10);
+					dmg = Math.min(dmg, 0 + rollDice(10, 10));
+					dmg = Math.max(dmg, 0 + rollDice(10., 10));
+					
+					if (random(100) < enemiesCrit)
+					{
+					    dmg += 0 + rollDice(10, 10);
 					}
 
 					dmg *= 2;
@@ -155,10 +166,10 @@ Enemy.prototype.update = function(deltaTime, id){
 					this.attackTimer = this.attackCooldown;
 				}
 			}
-
 		}
 		
-		if(this.enemyType == "ranged" && this.bulletsTimer == 0){
+		if(this.enemyType == "ranged" && this.bulletsTimer == 0)
+		{
 			this.useWaypoints = false;
 			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
 			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
@@ -170,37 +181,42 @@ Enemy.prototype.update = function(deltaTime, id){
 
 			this.makePath(this.lastPlayerPos);
 
-			this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),[
-					new SAT.Vector(),
-					new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
-					new SAT.Vector(player.collider.pos.x - this.collider.pos.x + 20, player.collider.pos.y - this.collider.pos.y + 20),
-					new SAT.Vector(20,20),
-				]);
+			this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),
+			[
+				new SAT.Vector(),
+				new SAT.Vector(player.collider.pos.x - this.collider.pos.x, player.collider.pos.y - this.collider.pos.y),
+				new SAT.Vector(player.collider.pos.x - this.collider.pos.x + 20, player.collider.pos.y - this.collider.pos.y + 20),
+				new SAT.Vector(20,20),
+			]);
 
-			for(var a = 1; a < obstacles.length; a++){
+			for(var a = 1; a < obstacles.length; a++)
+			{
 				this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon());
 
-				if(this.toPlayerCollision)	{
+				if(this.toPlayerCollision)
+				{
 					this.canShoot = false;							
-					break;		
-					
+					break;
 				}
-				else {
+				else
+				{
 					this.canShoot = true;
 				}
 			}
 
-			if(toPlayer <= 500 && this.canShoot){
-
+			if(toPlayer <= 500 && this.canShoot)
+			{
 				this.deltaV = new SAT.Vector();
 
-				var dmg = 0
+				var dmg = 0;
 				var crit = false;
 				dmg = 0 + rollDice(10, 10)
-				dmg = Math.min(dmg, 0 + rollDice(10, 10))
-				dmg = Math.max(dmg, 0 + rollDice(10, 10))
-				if (random(100) < enemiesCrit){
-					dmg += 0 + rollDice(10, 10)
+				dmg = Math.min(dmg, 0 + rollDice(10, 10));
+				dmg = Math.max(dmg, 0 + rollDice(10, 10));
+				
+				if (random(100) < enemiesCrit)
+				{
+					dmg += 0 + rollDice(10, 10);
 					crit = true;
 				}					
 				
@@ -214,19 +230,15 @@ Enemy.prototype.update = function(deltaTime, id){
 				this.bulletsTimer = this.bulletCooldown;
 				this.canShoot = false;
 			}
-
-			else {
-
+			else
+			{
 				this.deltaV = this.deltaFromPath();	
 			}
-		}
-		
+		}		
 	}
 
-	if(!playerAlive)
+	if(!player.playerAlive)
 		this.deltaV = new SAT.Vector();
-	
-	
 	
 	//moving to player last pos
 	/*
@@ -252,7 +264,8 @@ Enemy.prototype.update = function(deltaTime, id){
 	//this.forward.y = this.collider.pos.y + this.deltaV.y;
 
 	//enemy death
-	if(this.health <= 0){		
+	if(this.health <= 0)
+	{		
 		isFollowing = false;
 		followEnemy = null;
 		level.wave.enemies.splice(id, 1);		
@@ -274,35 +287,38 @@ Enemy.prototype.update = function(deltaTime, id){
 
 	if(this.bulletsTimer > 0) this.bulletsTimer -= deltaTime;
 	if(this.bulletsTimer < 0) this.bulletsTimer = 0;
+}
 
-
-};
-Enemy.prototype.makePath = function(target){
+Enemy.prototype.makePath = function(target)
+{
 	var pathEnd = pathfindingGraph.grid[target.x][target.y]
 	var pathStart = pathfindingGraph.grid[this.toNodes.x][this.toNodes.y];
-	this.path = astar.search(pathfindingGraph, pathStart, pathEnd, {
-        closest: true,
-    });
+	this.path = astar.search(pathfindingGraph, pathStart, pathEnd, true);
 
     this.curPath = 0;
-};
-Enemy.prototype.toNode = function(target){
-	for(var a = 0; a < nSizeX; a++){			
-		for(var b = 0; b < nSizeY; b++){
+}
+
+Enemy.prototype.toNode = function(target)
+{
+	for(var a = 0; a < nSizeX; a++)
+	{			
+		for(var b = 0; b < nSizeY; b++)
+		{
 			var boxX = a * pathfindingNodesScale;
 			var boxY = b * pathfindingNodesScale;
 			if (boxX <= target.x && boxX + pathfindingNodesScale >= target.x &&
-				boxY <= target.y && boxY + pathfindingNodesScale >= target.y) {
-
+				boxY <= target.y && boxY + pathfindingNodesScale >= target.y)
+			{
 				return new SAT.Vector(a,b);
 			}
 		}
 	}
-};
-Enemy.prototype.deltaFromPath = function(){
+}
 
-	if(this.path[this.curPath + 1] != undefined){
-		
+Enemy.prototype.deltaFromPath = function()
+{
+	if(this.path[this.curPath + 1] != undefined)
+	{		
 		var curEnemyXTemp = this.path[this.curPath].x * pathfindingNodesScale;
 		var curEnemyYTemp = this.path[this.curPath].y * pathfindingNodesScale;
 
@@ -320,35 +336,38 @@ Enemy.prototype.deltaFromPath = function(){
 			this.curPath++;	
 		
 		this.lastDeltaV = new SAT.Vector(deltaX, deltaY).normalize();
+		
 		return new SAT.Vector(deltaX, deltaY).normalize();
-
 	}
-	else{
+	else
+	{
 		return this.lastDeltaV;
 	}
+}
 
-};
-Enemy.prototype.collisionCheck = function(){
-	if(level.obstacles != null){
-
-		for(var a = 0; a < level.obstacles.length; a++){
-
+Enemy.prototype.collisionCheck = function()
+{
+	if(level.obstacles != null)
+	{
+		for(var a = 0; a < level.obstacles.length; a++)
+		{
 			var response = new SAT.Response();
-			var col = SAT.testPolygonCircle(level.obstacles[a].toPolygon(), this.collider, response)
+			var col = SAT.testPolygonCircle(level.obstacles[a].toPolygon(), this.collider, response);
 
-			if(col){
-
+			if(col)
+			{
 				collisonResponse(response, this.collider, obstacles[a]);
-
 			}		
 		}
 	}
 }
-Enemy.prototype.draw = function(){
-	
+
+Enemy.prototype.draw = function()
+{	
 	if(this.path != null && gizomos)
-		for(var a = 0; a < this.path.length; a++){
-			ctx.fillStyle = "black"
+		for(var a = 0; a < this.path.length; a++)
+		{
+			ctx.fillStyle = "black";
 			ctx.fillRect(this.path[a].x * pathfindingNodesScale - viewX, this.path[a].y * pathfindingNodesScale - viewY, pathfindingNodesScale, pathfindingNodesScale)
 		}
 
@@ -358,15 +377,17 @@ Enemy.prototype.draw = function(){
 	if(this.enemyType == "ranged")
 		renderStrokeColliderCircle(this.collider, "orange", viewX, viewY);
 
-	if(gizomos){		
-		ctx.fillStyle = "black"
-		for(var a = 0; a < this.waypoints.length; a++){
+	if(gizomos)
+	{		
+		ctx.fillStyle = "black";
+		for(var a = 0; a < this.waypoints.length; a++)
+		{
 			ctx.fillRect(this.waypoints[a].x - viewX, this.waypoints[a].y - viewY, 5,5);
 		}
 	}
 
-	ctx.fillStyle = "green"
-	ctx.fillRect(this.forward.x - viewX, this.forward.y - viewY, 10,10)
+	ctx.fillStyle = "green";
+	ctx.fillRect(this.forward.x - viewX, this.forward.y - viewY, 10,10);
 
 	//hp bar
 	ctx.lineWidth = 2; 
@@ -379,14 +400,11 @@ Enemy.prototype.draw = function(){
 
 	ctx.strokeStyle = "black";
 	ctx.font = "15px Pixel";
-	ctx.fillStyle = "white"
+	ctx.fillStyle = "white";
 	ctx.strokeText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
 	ctx.fillText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
-
-		
 }
 
-Enemy.prototype.drawShadows = function(){
-
-	
+Enemy.prototype.drawShadows = function()
+{
 }
