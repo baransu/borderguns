@@ -1,3 +1,4 @@
+/* global Animation */
 /* global astar */
 
 function Enemy(type, x, y, radius, waypoints, hp)
@@ -55,7 +56,7 @@ Enemy.prototype.update = function(deltaTime, id)
 	if(this.waypoints != null && this.useWaypoints)
 	{
 
-		var toNext = Math.sqrt(Math.pow((this.waypoints[this.curWay].x - this.collider.pos.x),2) + Math.pow((this.waypoints[this.curWay].y - this.collider.pos.y),2));	
+		var toNext = Math.sqrt(Math.pow((this.waypoints[this.curWay].x - this.collider.pos.x), 2) + Math.pow((this.waypoints[this.curWay].y - this.collider.pos.y), 2));	
 		
 		if(toNext <= toPointOffset)
 		{
@@ -268,7 +269,8 @@ Enemy.prototype.update = function(deltaTime, id)
 	{		
 		isFollowing = false;
 		followEnemy = null;
-		level.wave.enemies.splice(id, 1);		
+		level.wave.enemies.splice(id, 1);	
+		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
 	}
 
 	//hp bar math

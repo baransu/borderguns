@@ -24,43 +24,7 @@ Player.prototype.update = function(deltaTime)
 
 	mouseToPlayerAngle = makeAngle(CANVASW/2, mouse.x, CANVASH/2, mouse.y);
 
-	//calculation crosshair position
-	if(useGamepad )
-	{
-		if(rightX > gamepadRightOffset || rightX < -gamepadRightOffset || rightY > gamepadRightOffset || rightY < -gamepadRightOffset)
-		{
-			var crosshairAngle = makeAngle(CANVASW/2, CANVASW/2 + rightX, CANVASH/2, CANVASH/2 + rightY);
-		}
-		else
-		{
-			var crosshairAngle = makeAngle(CANVASW/2, CANVASW/2 + leftX, CANVASH/2, CANVASH/2 + leftY);
-		}
-		
-		var tempX = CANVASW/2 + Math.cos(crosshairAngle) * 250;
-		var tempY = CANVASH/2 + Math.sin(crosshairAngle) * 250;
-		crosshairPosition = new SAT.Vector(tempX, tempY);
-	}
-	else
-	{
-		crosshairPosition = new SAT.Vector(mouse.x, mouse.y);
-	}
-
-
-	//gamepad shooting
-	if(useGamepad && rightTrigger.pressed === true && bulletTimer === 0 && playerInput)
-	{
-		var temp = new SAT.Vector();
-
-		if(rightX > gamepadRightOffset || rightX < -gamepadRightOffset || rightY > gamepadRightOffset || rightY < -gamepadRightOffset)
-		{
-			temp = new SAT.Vector(rightX, rightY);
-		}
-		else
-			temp = playerForward;
-
-		temp.normalize();
-		shootBullet(this.collider.pos, temp);
-	}
+	crosshairPosition = new SAT.Vector(mouse.x, mouse.y);
 
 	//mouse shooting
 	if(mouseLeftPressed && bulletTimer === 0 && this.playerInput)
@@ -80,7 +44,7 @@ Player.prototype.update = function(deltaTime)
 
 Player.prototype.draw = function()
 {
-	drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - 128/2, CANVASH/2 - 128/2, 128, 128, mouseToPlayerAngle);
+	//drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - 128/2, CANVASH/2 - 128/2, 128, 128, mouseToPlayerAngle);
 	renderStrokeColliderCircle(this.collider, "green", viewX, viewY);
 	//renderStrokeColliderBox(player)
 }

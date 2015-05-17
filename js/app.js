@@ -1,3 +1,5 @@
+/* global SAT */
+/* global Level */
 /* global input */
 /* global Bullet */
 /* global Graph */
@@ -119,11 +121,11 @@ var distanceToEnemies = [];
 var followSearch = false;
 
 var gun = {
-	bulletType: "multishot",
-	richocetCount: 10000,
+	bulletType: "simple", //shotgun // multishot
+	richocetCount: 5,
 	bulletSpawnCooldown: 0,
 	bulletSpeed: 1500,
-	shotgunBullets: 50,
+	shotgunBullets: 5,
 	bulletSize: 2,
 };
 
@@ -148,6 +150,9 @@ var level = null;
 
 var wallSize = 64;
 
+var animations = [];
+
+var backgroundMusic = new Audio("sounds/background.mp3"); 
 
 function load()
 {
@@ -159,17 +164,39 @@ function load()
 	ctx.webkitImageSmoothingEnabled = false;
 	ctx.msImageSmoothingEnabled = false;
 	ctx.imageSmoothingEnabled = false;
+	
+	if (canvas.requestFullscreen)
+	{
+	  canvas.requestFullscreen();
+	}
+	else if (canvas.msRequestFullscreen)
+	{
+	  canvas.msRequestFullscreen();
+	}
+	else if (canvas.mozRequestFullScreen)
+	{
+	  canvas.mozRequestFullScreen();
+	}
+	else if (canvas.webkitRequestFullscreen)
+	{
+	  canvas.webkitRequestFullscreen();
+	}
+	
 
-	document.addEventListener('mousemove', function(e){
-		if(!isFollowing){			
+	document.addEventListener('mousemove', function(e)
+	{
+		if(!isFollowing)
+		{			
 			mouse.x = e.clientX || e.pageX; 
 			mouse.y = e.clientY || e.pageY;
 		}
 
 	}, false);
 
-	document.addEventListener('mousedown', function(e){
-		switch (e.which) {
+	document.addEventListener('mousedown', function(e)
+	{
+		switch (e.which)
+		{
 	        case 1:
 	       		mouseLeftPressed = true;
 	            break;
@@ -184,13 +211,15 @@ function load()
     	}
 	}, false);
 
-	document.addEventListener('mouseup', function(e){
+	document.addEventListener('mouseup', function(e)
+	{
 		mouseLeftPressed = false;
 		mouseRightPressed = false;
 		mouseMiddlePressed = false;
 	}, false);
 
-	document.addEventListener('contextmenu', function(e){
+	document.addEventListener('contextmenu', function(e)
+	{
 		e.preventDefault();
 	}, false);	
 
@@ -250,14 +279,16 @@ function load()
 		
 	for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
 
-	for(var a = 0; a < nSizeX;a++){
+	for(var a = 0; a < nSizeX;a++)
+	{
 		pathfindingNodes[a]=[];
 		for(var b = 0; b < nSizeY; b++)
 			pathfindingNodes[a][b] = 1;
 	}
 
 	//creating pathfinding nodes
-	for(var z = 1; z < obstacles.length; z++){	
+	for(var z = 1; z < obstacles.length; z++)
+	{	
 		for(var a = 0; a < nSizeX; a++){			
 			for(var b = 0; b < nSizeY; b++){
 				var boxX = a * pathfindingNodesScale;
@@ -272,17 +303,21 @@ function load()
 	}
 
 	//adding hight values to pathfinding near walls
-	for(var a = 0; a < nSizeX; a++){
-		for(var b = 0; b < nSizeY; b++){
-			if(pathfindingNodes[a][b] == 0){
-				for (var xx = -AIWallOffsetL1; xx <= AIWallOffsetL1; xx++) {
-                    for (var yy = -AIWallOffsetL1; yy <= AIWallOffsetL1; yy++) {
+	for(var a = 0; a < nSizeX; a++)
+	{
+		for(var b = 0; b < nSizeY; b++)
+		{
+			if(pathfindingNodes[a][b] == 0)
+			{
+				for (var xx = -AIWallOffsetL1; xx <= AIWallOffsetL1; xx++)
+				{
+                    for (var yy = -AIWallOffsetL1; yy <= AIWallOffsetL1; yy++)
+					{
                         var pom1 = xx + a;
                         var pom2 = yy + b;
                         
                         if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
                             pathfindingNodes[pom1][pom2] = 2;
-
                     }
                 }
 			}
@@ -290,11 +325,16 @@ function load()
 	}
 
 	//adding lesser (but higher than normal) values to pathfinding 
-	for(var a = 0; a < nSizeX; a++){
-		for(var b = 0; b < nSizeY; b++){
-			if(pathfindingNodes[a][b] == 0){
-				for (var xx = -AIWallOffsetL2; xx <= AIWallOffsetL2; xx++) {
-                    for (var yy = -AIWallOffsetL2; yy <= AIWallOffsetL2; yy++) {
+	for(var a = 0; a < nSizeX; a++)
+	{
+		for(var b = 0; b < nSizeY; b++)
+		{
+			if(pathfindingNodes[a][b] == 0)
+			{
+				for (var xx = -AIWallOffsetL2; xx <= AIWallOffsetL2; xx++)
+				{
+                    for (var yy = -AIWallOffsetL2; yy <= AIWallOffsetL2; yy++)
+					{
                         var pom1 = xx + a;
                         var pom2 = yy + b;
                         
@@ -329,18 +369,8 @@ function load()
 		hp: 1000,
 	}
 
-	//checking is pad connected
-	var checkGP = setInterval(function (){
-		if(navigator.getGamepads()[0]) {
-	        if(!useGamepad){
-	        	$(window).trigger("gamepadconnected");
-	        	console.log("gamepad")
-	        	clearInterval(checkGP);
-	        }
-    	}
-	}, 500);	
-
-	if(enemies.length > 0){
+	if(enemies.length > 0)
+	{
 		var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
 		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
 		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
@@ -352,11 +382,20 @@ function load()
 	if(ls.getItem("base") == null)
 		ls.setItem("base", 0);
 
-	gameLoop();
+	backgroundMusic.addEventListener("ended", function()
+	{
+	    this.currentTime = 0;
+	    this.play();
+	}, false);
+	
+	backgroundMusic.volume = 0.2;
+	backgroundMusic.play();
 
+	gameLoop();
 }
 
-function gameLoop() {
+function gameLoop()
+{
     var now = Date.now();
     var deltaTime = (now - lastTime) / 1000.0;
 
@@ -368,17 +407,17 @@ function gameLoop() {
     window.requestAnimationFrame(gameLoop);
 }
 
-function update(deltaTime){
-
+function update(deltaTime)
+{
 	level.update(deltaTime);
 
 	player.update(deltaTime);
+	
+	//animations update
+	for(var i = 0; i < animations.length; i++) animations[i].update(i);
 
 	//dmgtext
-	for(var a = 0; a < dmgText.length; a++)
-	{
-		dmgText[a].update(deltaTime, a);
-	}
+	for(var i = 0; i < dmgText.length; i++) dmgText[i].update(deltaTime, i);
 	
 	//gradient stuff
 	if(bgGradient == 0 && calcGradient == false)
@@ -412,8 +451,7 @@ function update(deltaTime){
 		bloodEffectTimer = 0;
 	}
 
-	if(bloodEffectTimer == 0) bloodEffect = false;
-	
+	if(bloodEffectTimer == 0) bloodEffect = false;	
 }
 
 function render()
@@ -421,10 +459,9 @@ function render()
 	//clearing canvas
 	ctx.clearRect(0, 0, CANVASH, CANVASH);		
 	
-	//IS IT NESESARY?!
 	//changing background gradient color
-	if(calcGradient){
-
+	if(calcGradient)
+	{
 		var c0_0 = colors[colorIndices[0]];
 		var c0_1 = colors[colorIndices[1]];
 		var c1_0 = colors[colorIndices[2]];
@@ -442,16 +479,17 @@ function render()
 		gradientColors[1] = "rgb(" + r2 + ", " + g2 + ", " + b2 + ")";
 
 		step += gradientSpeed;
-		if (step >= 1){
+		if (step >= 1)
+		{
 			step %= 1;
 			colorIndices[0] = colorIndices[1];
 			colorIndices[2] = colorIndices[3];
 
 			colorIndices[1] = ( colorIndices[1] + Math.floor( 1 + Math.random() * (colors.length - 1))) % colors.length;
 			colorIndices[3] = ( colorIndices[3] + Math.floor( 1 + Math.random() * (colors.length - 1))) % colors.length;
-
 		}
 	}
+	
 	//still gradient stuff
 	var my_gradient = ctx.createLinearGradient(0, 0, CANVASW/2, CANVASH);
 	my_gradient.addColorStop(0, gradientColors[0]);
@@ -469,10 +507,13 @@ function render()
 	//ctx.drawImage(floor, viewX, viewY, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
 
 	//debuging stuff / to delete at the end
-	if(gizomos){
+	if(gizomos)
+	{
 		ctx.lineWidth = 1;
 		for(var a = 0; a < nSizeX; a++)
-			for(var b = 0; b < nSizeY; b++){
+		{
+			for(var b = 0; b < nSizeY; b++)
+			{
 				if(pathfindingNodes[a][b] == 1)
 					ctx.strokeStyle = "magenta";
 				else if(pathfindingNodes[a][b] == 2)
@@ -483,14 +524,17 @@ function render()
 					ctx.strokeStyle = "black";
 
 				ctx.strokeRect(a * pathfindingNodesScale - viewX, b * pathfindingNodesScale - viewY, pathfindingNodesScale,pathfindingNodesScale);
-
 			}
+		}			
 	}	
 
-	//player	
-	
+	//enviroment
 	level.draw();
+	//player
 	player.draw();
+	
+	//animations
+	for(var i = 0; i < animations.length; i++) animations[i].render();
 	
 	//GUI STUFF
 	//cool effects
@@ -498,13 +542,12 @@ function render()
 		postEffects();
 	
 	//dmgtext draw
-	for(var a = 0; a < dmgText.length; a++){
-		dmgText[a].draw();
-	}
+	for(var i = 0; i < dmgText.length; i++)	dmgText[i].render();
 	
 	ctx.lineWidth = 1;
 
-	if(!win && player.playerAlive){
+	if(!win && player.playerAlive)
+	{
 		//hp bar
 		ctx.strokeStyle = "white";
 		ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50);
@@ -520,11 +563,10 @@ function render()
 
 		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
-
 	}
 
-	if(win || !player.playerAlive){
-
+	if(win || !player.playerAlive)
+	{
 		//copyrights
 		ctx.fillStyle = "white";
 		ctx.font="15px Pixel";
@@ -534,7 +576,8 @@ function render()
 	}
 	
 	//game over
-	if(!player.playerAlive){
+	if(!player.playerAlive)
+	{
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
 		//ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
 		ctx.font = "50px Pixel";
@@ -552,7 +595,8 @@ function render()
 	}	
 
 	//win
-	if(win){
+	if(win)
+	{
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
 		//ctx.fillRect(CANVASW/2 - 330, CANVASH/2 - 65, 730, 100);
 		ctx.font = "50px Pixel";
@@ -561,11 +605,14 @@ function render()
 		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
 		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
 	}
+	
 	ctx.fillStyle = "black";
 	ctx.fillRect(CANVASW/2, CANVASH/2, 10,10)
-};
-//player shooting
-function shootBullet(origin, direction){
+	
+}
+
+function shootBullet(origin, direction)
+{
 	//damage calculation and spawning bullets
 	var dmg = 0;
 	var crit = false;
@@ -606,20 +653,26 @@ function shootBullet(origin, direction){
 	}
 
 	bulletTimer = gun.bulletSpawnCooldown;
-};
-function postEffects(){
-	for(var a = 0; a < CANVASH/5; a++){
+}
+
+function postEffects()
+{
+	for(var a = 0; a < CANVASH/5; a++)
+	{
 		ctx.fillStyle = "rgba(0,0,0,"+ (Math.random() * (0.035- 0) + 0) +")";
 		ctx.fillRect(0,a * 5,CANVASW,5);
 		ctx.strokeStyle = "rgba(0,0,0,"+ (Math.random() * (0.05 - 0) + 0) +")";
 		ctx.strokeRect(0,a * 5,CANVASW,5);
 	}
+	
 	if(bloodEffect || !player.playerAlive)
 		gradientCircleFilterBlood(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "255,0,0");
 	else
 		gradientCircleFilter(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "0,0,0");
 }
-function gradientCircleFilter(x, y, r, c) {
+
+function gradientCircleFilter(x, y, r, c)
+{
     ctx.beginPath();
     var rad = ctx.createRadialGradient(x, y, 1, x, y, r);
     rad.addColorStop(0, 'rgba('+c+',0)');
@@ -628,8 +681,10 @@ function gradientCircleFilter(x, y, r, c) {
     ctx.fillStyle = rad;
     ctx.arc(x, y, r, 0, Math.PI*2, false);
     ctx.fill();
-};
-function gradientCircleFilterBlood(x, y, r, c) {
+}
+
+function gradientCircleFilterBlood(x, y, r, c)
+{
     ctx.beginPath();
     var rad = ctx.createRadialGradient(x, y, 1, x, y, r);
     rad.addColorStop(0, 'rgba('+c+',0)');
@@ -637,9 +692,10 @@ function gradientCircleFilterBlood(x, y, r, c) {
     ctx.fillStyle = rad;
     ctx.arc(x, y, r, 0, Math.PI*2, false);
     ctx.fill();
-};
-function handleInput(deltaTime){
-	
+}
+
+function handleInput(deltaTime)
+{	
 //	if(canGame())
 //	{ 
 //        $(window).on("gamepadconnected", function() {
@@ -652,8 +708,10 @@ function handleInput(deltaTime){
 //        });
 //    }
 
-	if(player.playerInput){
-		if(useGamepad){
+	if(player.playerInput)
+	{
+		if(useGamepad)
+		{
 			var gp = navigator.getGamepads()[0];
 		    leftX = gp.axes[0];
 		    leftY = gp.axes[1];
@@ -675,85 +733,115 @@ function handleInput(deltaTime){
 		}
 
 		//up 87
-		if(input.isDown("w")){
+		if(input.isDown("w"))
+		{
 			player.pos.y -= speed * deltaTime;
 		}
 		//down 83
-		if(input.isDown("s")){
+		if(input.isDown("s"))
+		{
 			player.pos.y += speed * deltaTime;	
 		}
 		//left 65
-		if(input.isDown("a")){
+		if(input.isDown("a"))
+		{
 			player.pos.x -= speed * deltaTime;
 		}
 		//right 68
-		if(input.isDown("d")){
+		if(input.isDown("d"))
+		{
 			player.pos.x += speed * deltaTime;	
 		}
 	}
 
-	if(input.isDown("z") && gizomos && inputTimer === 0){
+	if(input.isDown("z") && gizomos && inputTimer === 0)
+	{
 			gizomos = false;
 			inputTimer = inputCooldown;
 	}
-	if(input.isDown("z") && !gizomos && inputTimer === 0){
+	
+	if(input.isDown("z") && !gizomos && inputTimer === 0)
+	{
 			gizomos = true;
 			inputTimer = inputCooldown;
 	}
 
-	if(input.isDown("e") && postE && inputTimer === 0){
+	if(input.isDown("e") && postE && inputTimer === 0)
+	{
 			postE = false;
 			inputTimer = inputCooldown;
 	}
-	if(input.isDown("e") && !postE && inputTimer === 0){
+	
+	if(input.isDown("e") && !postE && inputTimer === 0)
+	{
 			postE = true;
 			inputTimer = inputCooldown;
 	}
-	if(input.isDown("q") && !postE && inputTimer === 0 && !followSearch){
+	
+	if(input.isDown("q") && !postE && inputTimer === 0 && !followSearch)
+	{
 			followSearch = true;
 			inputTimer = inputCooldown;
 	}
-	if(input.isDown("r") && inputTimer === 0){
+	
+	if(input.isDown("r") && inputTimer === 0)
+	{
 		inputTimer = inputCooldown;
 		levelRestart();
 	}
-	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0){
+	
+	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0)
+	{
 		inputTimer = inputCooldown;
 		var abc = Math.floor(Math.random() * 2);
 		var radius = enemiesData[0].hp/enemiesSizeScale
 		level.wave.enemies.push(new Enemy(enemiesTypes[abc], enemiesData[0].startPos.x, enemiesData[0].startPos.y, radius, enemiesData[0].waypoints, enemiesData[0].hp));
 	}
-};
-function makeAngle(x1,x2,y1,y2){
+}
+
+function makeAngle(x1,x2,y1,y2)
+{
 	return Math.atan2(y2 - y1,x2 - x1);	
-};
-function random(int){
+}
+
+function random(int)
+{
 	return Math.floor(Math.random() * int);
-};
-//function canGame() {
-//    return "getGamepads" in navigator;
-//};
-function rollDice(N, S){
+}
+
+//function canGame()
+//{
+//	return "getGamepads" in navigator;
+//}
+
+function rollDice(N, S)
+{
     var value = 0;    
     for(var a = 0; a < N; a++) value += random(S + 1);    
     return value;
-};
-function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle){
+}
+
+function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle)
+{
 	ctx.save();		
 	ctx.translate(x + width/2, y + height/2);
 	ctx.rotate(angle);
 	ctx.drawImage(source, sX, sY, sWidth, sHeight, -(width/2), -(height/2), width, height);
 	ctx.restore();
-};
-function renderStrokeColliderBox(collider, color, viewX, viewY){
+}
+
+function renderStrokeColliderBox(collider, color, viewX, viewY)
+{
 	ctx.fillStyle = color;
 	ctx.fillRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
 	//ctx.strokeStyle = color;
 	//ctx.strokeRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
 	//ctx.font = "20px Georgia";
 	//ctx.fillText(name, collider.pos.x - viewX, collider.pos.y + 20 - viewY);
-};
-function renderStrokeColliderCircle(collider, color, viewX, viewY){
+}
+
+function renderStrokeColliderCircle(collider, color, viewX, viewY)
+{
 	ctx.beginPath();
 	ctx.arc(collider.pos.x - viewX, collider.pos.y - viewY, collider.r, 0, 2 * Math.PI, false);
 	ctx.strokeStyle = "black";
@@ -761,20 +849,27 @@ function renderStrokeColliderCircle(collider, color, viewX, viewY){
 	ctx.stroke();
 	ctx.fillStyle = color;
 	ctx.fill();
-};
-function renderStrokeColliderPolygon(collider, color, viewX, viewY){
+}
+
+function renderStrokeColliderPolygon(collider, color, viewX, viewY)
+{
 	ctx.fillStyle = color;
 	//ctx.strokeStyle = color;
 	ctx.beginPath();
 	ctx.moveTo(collider.calcPoints[0].x + collider.pos.x - viewX, collider.calcPoints[0].y + collider.pos.y - viewY);
-	for(var a = 1; a < collider.calcPoints.length; a++){
+	
+	for(var a = 1; a < collider.calcPoints.length; a++)
+	{
 		ctx.lineTo(collider.calcPoints[a].x + collider.pos.x - viewX, collider.calcPoints[a].y + collider.pos.y - viewY);
 	}
+	
 	ctx.closePath();
 	//ctx.stroke();
 	ctx.fill();
-};
-function collisonResponse(response, obj1, obj2){
+}
+
+function collisonResponse(response, obj1, obj2)
+{
 	if (obj2.isHeavy) {
 		response.overlapV.scale(1.001)
 		obj1.pos.add(response.overlapV);
@@ -784,9 +879,10 @@ function collisonResponse(response, obj1, obj2){
 		obj2.pos.sub(response.overlapV);
 		obj1.pos.add(response.overlapV);
 	}
-};
-function levelRestart(){
+}
 
+function levelRestart()
+{
 	//player
 	delete player;
 	player = new Player(playerStartPos.x, playerStartPos.y);
@@ -811,18 +907,13 @@ function levelRestart(){
 
 	//is game won
 	win = false;
-
-
-};
+}
 
 //################ CODE NAME: BORDERGUNS ###################
 //################ v 0.1 in development ###################
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
 //damage calculation system
-//enemies impact to bullets
 //sprites / art
-//enemies cover system
-//enemies dodge system
 //perk system
 //player stats system
 //weapons stats system
@@ -834,7 +925,6 @@ function levelRestart(){
 //beautify code
 //perks
 //waves add bonus
-//bigger lavel
 
 //player stats
 //weapons stat

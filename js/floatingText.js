@@ -27,7 +27,7 @@ FloatingText.prototype.update = function(deltaTime, id)
 	if(this.lifeTime < 0) dmgText.splice(id, 1);
 }
 
-FloatingText.prototype.draw = function ()
+FloatingText.prototype.render = function ()
 {
 	if(this.crit)
 	{

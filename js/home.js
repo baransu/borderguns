@@ -22,7 +22,9 @@ var step = 0;
 var colorIndices = [0,1,2,3];
 var gradientSpeed = 0.1;
 
-function init()
+var titlescreenMusic = new Audio("sounds/lobby.mp3"); 
+
+function load()
 {
 	canvas = document.getElementById("canvas");
 	ctx = canvas.getContext("2d");
@@ -33,10 +35,37 @@ function init()
 	ctx.msImageSmoothingEnabled = false;
 	ctx.imageSmoothingEnabled = false;
 
+	if (canvas.requestFullscreen)
+	{
+	  canvas.requestFullscreen();
+	}
+	else if (canvas.msRequestFullscreen)
+	{
+	  canvas.msRequestFullscreen();
+	}
+	else if (canvas.mozRequestFullScreen)
+	{
+	  canvas.mozRequestFullScreen();
+	}
+	else if (canvas.webkitRequestFullscreen)
+	{
+	  canvas.webkitRequestFullscreen();
+	}
+
+
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 	CANVASW = canvas.width;
 	CANVASH = canvas.height;
+	
+	titlescreenMusic.addEventListener("ended", function()
+	{
+	    this.currentTime = 0;
+	    this.play();
+	}, false);
+	
+	titlescreenMusic.volume = 0.2;
+	titlescreenMusic.play();
 
 	gameLoop();
 }
@@ -105,4 +134,12 @@ function render()
 
 	ctx.fillStyle = my_gradient;
 	ctx.fillRect(0,0,CANVASW,CANVASH);
+}
+
+function button(event)
+{
+	var e = event.which;
+	if(e != 122 && e != 123 && e != 116)
+		window.location.href = "game.html";
+	//console.log(event.which)
 }
