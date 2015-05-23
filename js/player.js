@@ -15,6 +15,8 @@ function Player(x,y,width,height)
 
 	this.playerInput = true;
 	this.playerAlive = true;
+
+	this.godMode = true;
 }
 
 Player.prototype.update = function(deltaTime)
@@ -34,12 +36,6 @@ Player.prototype.update = function(deltaTime)
 
 		shootBullet(this.collider.pos, temp);
 	}
-
-	//hp check
-	if(this.health < 0) this.health = 0;
-	if(this.health > this.maxHealth) this.health = this.maxHealth;
-	if(this.health == 0) this.die();
-
 }
 
 Player.prototype.draw = function()
@@ -71,4 +67,17 @@ Player.prototype.die = function()
 {
 	this.playerInput = false;
 	this.playerAlive = false;
+}
+
+Player.prototype.applyDamage = function(damage)
+{
+	if(!this.godMode)
+	{
+		this.health -= damage;
+
+		//hp check
+		if(this.health < 0) this.health = 0;
+		if(this.health > this.maxHealth) this.health = this.maxHealth;
+		if(this.health == 0) this.die();
+	}
 }

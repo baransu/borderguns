@@ -82,7 +82,8 @@ Bullet.prototype.update = function(deltaTime, id)
 			var col = SAT.testCircleCircle(player.collider, this.collider);
 			if(col)
 			{
-				player.health -= this.damage;
+				player.applyDamage(this.damage);
+
 				var mainColor = {
 					r: 255,
 					g: 255,
@@ -148,8 +149,6 @@ Bullet.prototype.update = function(deltaTime, id)
 			{
 				if(this.fromPlayer)
 				{
-					level.bullets.splice(id, 1);
-					level.wave.enemies[a].health -= this.damage;
 					//moving it to bullets variable and based on damage type 
 					var mainColor = {
 						r: 255,
@@ -161,7 +160,10 @@ Bullet.prototype.update = function(deltaTime, id)
 						g: 0,
 						b: 0,
 					};
+
 					dmgText.push(new FloatingText(level.wave.enemies[a].collider.pos.x, level.wave.enemies[a].collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
+					level.wave.enemies[a].applyDamage(this.damage);
+					level.bullets.splice(id, 1);
 				}
 
 				level.bullets.splice(id, 1);

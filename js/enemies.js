@@ -49,10 +49,15 @@ function Enemy(type, x, y, radius, waypoints, hp)
 	this.bulletsSpeed = 1000;
 
 	this.canShoot = false;
+
+	this.id = 0;
+
 }
 
 Enemy.prototype.update = function(deltaTime, id)
 {
+	this.id = id;
+
 	if(this.waypoints != null && this.useWaypoints)
 	{
 
@@ -128,8 +133,10 @@ Enemy.prototype.update = function(deltaTime, id)
 	//follow player
 	if(this.playerIsInRange && player.playerAlive)
 	{
-		if(this.enemyType == "melee")
+		switch(this.enemyType)
 		{
+		case "melee":
+
 			this.useWaypoints = false;
 			this.toNodes = this.toNode(this.collider.pos)
 
@@ -161,12 +168,20 @@ Enemy.prototype.update = function(deltaTime, id)
 					dmg *= 2;
 					
 					this.meleeDamage = dmg;
-					player.health -= this.meleeDamage;
+					player.applyDamage(this.meleeDamage);
 					bloodEffectTimer = bloodEffectDuration;
 
 					this.attackTimer = this.attackCooldown;
 				}
 			}
+
+		break;
+		case "ranged":
+		break;
+		}
+		if(this.enemyType == "melee")
+		{
+			
 		}
 		
 		if(this.enemyType == "ranged" && this.bulletsTimer == 0)
@@ -264,21 +279,22 @@ Enemy.prototype.update = function(deltaTime, id)
 	//this.forward.x = this.collider.pos.x + this.deltaV.x;
 	//this.forward.y = this.collider.pos.y + this.deltaV.y;
 
-	//enemy death
-	if(this.health <= 0)
-	{		
-		isFollowing = false;
-		followEnemy = null;
-		level.wave.enemies.splice(id, 1);	
-		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
-	}
+	//preventing multiple enemies on one pathfindng node
+	//enemies avoiding themselfs
+	//console.log(this.toNodes);
 
-	//hp bar math
-	this.healthPercentage = this.health/this.maxHealth;
-	
-	if(this.health < 0) this.health = 0;
-	if(this.health > this.maxHealth) this.health = this.maxHealth;
+	for (var xx = -2; xx <= 2; xx++)
+	{
+        for (var yy = -2; yy <= 2; yy++)
+		{
+            var pom1 = xx + this.toNodes.x;
+            var pom2 = yy + this.toNodes.y;
+            
+            if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
+                pathfindingNodes[pom1][pom2] = 5;
 
+        }
+    }
 	//TIMERS
 	if(this.knockBackTimer > 0) this.knockBackTimer -= deltaTime;
 	if(this.knockBackTimer < 0) this.knockBackTimer = 0;
@@ -289,6 +305,26 @@ Enemy.prototype.update = function(deltaTime, id)
 
 	if(this.bulletsTimer > 0) this.bulletsTimer -= deltaTime;
 	if(this.bulletsTimer < 0) this.bulletsTimer = 0;
+}
+
+Enemy.prototype.applyDamage = function(damage)
+{
+	this.health -= damage;
+
+	//hp check
+	if(this.health < 0) this.health = 0;
+	if(this.health > this.maxHealth) this.health = this.maxHealth;
+
+	this.healthPercentage = this.health/this.maxHealth;
+	
+	//death
+	if(this.health == 0)
+	{		
+		isFollowing = false;
+		followEnemy = null;
+		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
+		level.wave.enemies.splice(this.id, 1);	
+	}
 }
 
 Enemy.prototype.makePath = function(target)

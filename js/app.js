@@ -279,73 +279,7 @@ function load()
 		
 	for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
 
-	for(var a = 0; a < nSizeX;a++)
-	{
-		pathfindingNodes[a]=[];
-		for(var b = 0; b < nSizeY; b++)
-			pathfindingNodes[a][b] = 1;
-	}
-
-	//creating pathfinding nodes
-	for(var z = 1; z < obstacles.length; z++)
-	{	
-		for(var a = 0; a < nSizeX; a++){			
-			for(var b = 0; b < nSizeY; b++){
-				var boxX = a * pathfindingNodesScale;
-				var boxY = b * pathfindingNodesScale;
-				if (boxX < obstacles[z].pos.x + obstacles[z].w && boxX + pathfindingNodesScale > obstacles[z].pos.x &&
-					boxY < obstacles[z].pos.y + obstacles[z].h && boxY + pathfindingNodesScale > obstacles[z].pos.y) {
-
-					pathfindingNodes[a][b] = 0;
-				}
-			}
-		}
-	}
-
-	//adding hight values to pathfinding near walls
-	for(var a = 0; a < nSizeX; a++)
-	{
-		for(var b = 0; b < nSizeY; b++)
-		{
-			if(pathfindingNodes[a][b] == 0)
-			{
-				for (var xx = -AIWallOffsetL1; xx <= AIWallOffsetL1; xx++)
-				{
-                    for (var yy = -AIWallOffsetL1; yy <= AIWallOffsetL1; yy++)
-					{
-                        var pom1 = xx + a;
-                        var pom2 = yy + b;
-                        
-                        if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
-                            pathfindingNodes[pom1][pom2] = 2;
-                    }
-                }
-			}
-		}
-	}
-
-	//adding lesser (but higher than normal) values to pathfinding 
-	for(var a = 0; a < nSizeX; a++)
-	{
-		for(var b = 0; b < nSizeY; b++)
-		{
-			if(pathfindingNodes[a][b] == 0)
-			{
-				for (var xx = -AIWallOffsetL2; xx <= AIWallOffsetL2; xx++)
-				{
-                    for (var yy = -AIWallOffsetL2; yy <= AIWallOffsetL2; yy++)
-					{
-                        var pom1 = xx + a;
-                        var pom2 = yy + b;
-                        
-                        if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
-                            pathfindingNodes[pom1][pom2] = 5;
-
-                    }
-                }
-			}
-		}
-	}
+	pathfindingFunction();
 
 	//player start pos
 	playerStartPos = new SAT.Vector(1800,100);
@@ -390,6 +324,7 @@ function load()
 	
 	backgroundMusic.volume = 0.2;
 	backgroundMusic.play();
+	console.log(pathfindingNodes)
 
 	gameLoop();
 }
@@ -412,6 +347,7 @@ function update(deltaTime)
 	level.update(deltaTime);
 
 	player.update(deltaTime);
+
 	
 	//animations update
 	for(var i = 0; i < animations.length; i++) animations[i].update(i);
@@ -907,6 +843,77 @@ function levelRestart()
 
 	//is game won
 	win = false;
+}
+
+function pathfindingFunction()
+{
+	for(var a = 0; a < nSizeX;a++)
+	{
+		pathfindingNodes[a]=[];
+		for(var b = 0; b < nSizeY; b++)
+			pathfindingNodes[a][b] = 1;
+	}
+
+	//creating pathfinding nodes
+	for(var z = 1; z < obstacles.length; z++)
+	{	
+		for(var a = 0; a < nSizeX; a++){			
+			for(var b = 0; b < nSizeY; b++){
+				var boxX = a * pathfindingNodesScale;
+				var boxY = b * pathfindingNodesScale;
+				if (boxX < obstacles[z].pos.x + obstacles[z].w && boxX + pathfindingNodesScale > obstacles[z].pos.x &&
+					boxY < obstacles[z].pos.y + obstacles[z].h && boxY + pathfindingNodesScale > obstacles[z].pos.y) {
+
+					pathfindingNodes[a][b] = 0;
+				}
+			}
+		}
+	}
+
+	//adding hight values to pathfinding near walls
+	for(var a = 0; a < nSizeX; a++)
+	{
+		for(var b = 0; b < nSizeY; b++)
+		{
+			if(pathfindingNodes[a][b] == 0)
+			{
+				for (var xx = -AIWallOffsetL1; xx <= AIWallOffsetL1; xx++)
+				{
+                    for (var yy = -AIWallOffsetL1; yy <= AIWallOffsetL1; yy++)
+					{
+                        var pom1 = xx + a;
+                        var pom2 = yy + b;
+                        
+                        if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
+                            pathfindingNodes[pom1][pom2] = 2;
+                    }
+                }
+			}
+		}
+	}
+
+	//adding lesser (but higher than normal) values to pathfinding 
+	for(var a = 0; a < nSizeX; a++)
+	{
+		for(var b = 0; b < nSizeY; b++)
+		{
+			if(pathfindingNodes[a][b] == 0)
+			{
+				for (var xx = -AIWallOffsetL2; xx <= AIWallOffsetL2; xx++)
+				{
+                    for (var yy = -AIWallOffsetL2; yy <= AIWallOffsetL2; yy++)
+					{
+                        var pom1 = xx + a;
+                        var pom2 = yy + b;
+                        
+                        if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
+                            pathfindingNodes[pom1][pom2] = 5;
+
+                    }
+                }
+			}
+		}
+	}
 }
 
 //################ CODE NAME: BORDERGUNS ###################

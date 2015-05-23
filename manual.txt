@@ -13,3 +13,5 @@ Z - dev grid/ pathfinding nodes
 R - restart poziomu
 
 E - cool effects
+
+player.godMode = true/false //godMode
