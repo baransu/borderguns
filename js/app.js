@@ -158,6 +158,8 @@ var backgroundMusic = new Audio("sounds/background.mp3");
 
 var miniMap;
 
+var particleSystems = [];
+
 function load()
 {
 	canvas = document.getElementById("canvas");
@@ -330,10 +332,20 @@ function load()
 	}, false);
 	
 	backgroundMusic.volume = 0.2;
-	backgroundMusic.play();	
+//	backgroundMusic.play();	
 	
 	miniMap = new Map(mapCanvas, mapCtx);
 	
+	var pos = new SAT.Vector(CANVASW/2, CANVASH/2);
+	var gravity = new SAT.Vector(0, 0);
+	var color = {
+		start : {r : 255, g : 204, b : 0},
+		end : {r : 0, g : 255, b : 0},
+	}
+	
+	particleSystems.push(new ParticleSystem(0, pos, 100, 10, 1, 0, color, 0, Math.PI/2, 250, 50, gravity));
+//	ParticleSystem(globalLife, pos, particlesPerSecond, size, lifeTime, lifeTimeVariation, color, angle, angleVariation, velocity, velocityVariation, gravity)
+
 	gameLoop();
 }
 
@@ -362,6 +374,8 @@ function update(deltaTime)
 
 	//dmgtext
 	for(var i = 0; i < dmgText.length; i++) dmgText[i].update(deltaTime, i);
+	
+	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].update(deltaTime);
 	
 	//gradient stuff
 	if(bgGradient == 0 && calcGradient == false)
@@ -478,8 +492,11 @@ function render()
 	//player
 	player.render();
 	
+	
 	//animations
 	for(var i = 0; i < animations.length; i++) animations[i].render();
+	//particles
+	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].render();
 	
 	//GUI STUFF
 	//cool effects :3
@@ -551,6 +568,11 @@ function render()
 	}
 	
 	miniMap.render();	
+}
+
+function lerp(a, b, u)
+{
+    return (1 - u) * a + u * b;
 }
 
 function shootBullet(origin, direction)
@@ -746,6 +768,11 @@ function rollDice(N, S)
     return value;
 }
 
+function getRandFloatInRange(min, max)
+{
+ 	return Math.random() * (max - min) + min;
+}
+
 function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle)
 {
 	ctx.save();		
@@ -908,20 +935,13 @@ function pathfindingFunction()
 //################ CODE NAME: BORDERGUNS ###################
 //################ v 0.1 in development ###################
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
-//damage calculation system
-//sprites / art
-//perk system
-//player stats system
-//weapons stats system
-//shields / restore over time
-//shield enemies bullet richocet
 
-//gui / menus
-//node js 
-//beautify code
-//perks
-//waves add bonus
-
-//player stats
-//weapons stat
-
+//################ TO DO ###################
+//particles
+//game end statement
+//title screen 
+//level design
+//boss wave
+//tiles sprites
+//gui
+//enemies/player/bullet/everything art style
