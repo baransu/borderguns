@@ -2,6 +2,6 @@ function GUI()
 {
 }
 
-GUI.prototype.draw = function()
+GUI.prototype.render = function()
 {
 }

@@ -42,10 +42,7 @@ Level.prototype.update = function(deltaTime)
 	}
 
 	//bullets update
-	for(var a = 0; a < this.bullets.length; a++)
-	{
-		this.bullets[a].update(deltaTime, a);
-	}
+	for(var a = 0; a < this.bullets.length; a++) this.bullets[a].update(deltaTime, a);
 
 	//waves update
 	if(this.wave.enemies.length == 0)
@@ -58,30 +55,21 @@ Level.prototype.update = function(deltaTime)
 	}
 
 	this.wave.update(deltaTime);
-
 }
 
-Level.prototype.draw = function()
+Level.prototype.render = function()
 {
 	//bullets draw
-	for(var a = 0; a < this.bullets.length; a++)
-	{
-		this.bullets[a].draw();
-	}
+	for(var a = 0; a < this.bullets.length; a++) this.bullets[a].render();
 	
 	//obstacles draw
 	for(var a = 1; a < this.obstacles.length; a++)
-	{
 		renderStrokeColliderBox(this.obstacles[a], "black", viewX, viewY);
-	}
 
 	//waves draw - mainly enemies
-	this.wave.draw();
+	this.wave.render();
 	
 	//multishot bullets
-	for(var a = 0; a < this.bullets.length; a++)
-	{
-		this.bullets[a].multishotDraw();
-	}
+	for(var a = 0; a < this.bullets.length; a++) this.bullets[a].multishotDraw();
 
 }

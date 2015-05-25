@@ -52,6 +52,9 @@ function Enemy(type, x, y, radius, waypoints, hp)
 
 	this.id = 0;
 
+	this.hit = false;
+	this.hitTimer = 0;
+	this.hitTime = 0.1;
 }
 
 Enemy.prototype.update = function(deltaTime, id)
@@ -305,6 +308,16 @@ Enemy.prototype.update = function(deltaTime, id)
 
 	if(this.bulletsTimer > 0) this.bulletsTimer -= deltaTime;
 	if(this.bulletsTimer < 0) this.bulletsTimer = 0;
+	
+	if(this.hit)
+	{
+		this.hitTimer += deltaTime;
+		if(this.hitTimer > this.hitTime)
+		{
+			this.hit = false;
+			this.hitTimer = 0;
+		}
+	}
 }
 
 Enemy.prototype.applyDamage = function(damage)
@@ -325,6 +338,7 @@ Enemy.prototype.applyDamage = function(damage)
 		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
 		level.wave.enemies.splice(this.id, 1);	
 	}
+	this.hit = true;
 }
 
 Enemy.prototype.makePath = function(target)
@@ -400,20 +414,45 @@ Enemy.prototype.collisionCheck = function()
 	}
 }
 
-Enemy.prototype.draw = function()
+Enemy.prototype.render = function()
 {	
 	if(this.path != null && gizomos)
+	{
 		for(var a = 0; a < this.path.length; a++)
 		{
 			ctx.fillStyle = "black";
 			ctx.fillRect(this.path[a].x * pathfindingNodesScale - viewX, this.path[a].y * pathfindingNodesScale - viewY, pathfindingNodesScale, pathfindingNodesScale)
 		}
-
+	}
+	
+	//drawing with shadows		
+	ctx.save();
+	
 	if(this.enemyType == "melee")
-		renderStrokeColliderCircle(this.collider, "red", viewX, viewY);
-
-	if(this.enemyType == "ranged")
-		renderStrokeColliderCircle(this.collider, "orange", viewX, viewY);
+	{
+		ctx.fillStyle = "red";
+		if(this.hit)
+			ctx.shadowColor = 'rgba(255, 0, 0, 0.7)';
+		else 
+			ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+	}
+	else
+	{
+		ctx.fillStyle = "orange";
+		if(this.hit)
+			ctx.shadowColor = 'rgba(255, 204, 0, 0.7)';
+		else 
+			ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+	} 
+		
+	ctx.shadowBlur = 15;
+	
+	
+		
+	ctx.beginPath();
+	ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+	ctx.fill();		
+	ctx.restore();
 
 	if(gizomos)
 	{		
@@ -441,8 +480,4 @@ Enemy.prototype.draw = function()
 	ctx.fillStyle = "white";
 	ctx.strokeText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
 	ctx.fillText(this.health + "/" + this.maxHealth, this.collider.pos.x - 100/2 - viewX + 5, this.collider.pos.y - this.radius - 15*1.25 - viewY);
-}
-
-Enemy.prototype.drawShadows = function()
-{
 }

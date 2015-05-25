@@ -35,21 +35,13 @@ function BossWave(difficulty)
 
 BossWave.prototype.update = function(deltaTime)
 {
-	//enemies update
-	for(var a = 0; a < this.enemies.length; a++)
-	{
-		this.enemies[a].update(deltaTime, a);
-	}
-
+	for(var a = 0; a < this.enemies.length; a++) this.enemies[a].update(deltaTime, a);
 }
 
-BossWave.prototype.draw = function()
+BossWave.prototype.render = function()
 {
 	//enemies draw
-	for(var a = 0; a < this.enemies.length; a++)
-	{
-		this.enemies[a].draw();
-	}
+	for(var a = 0; a < this.enemies.length; a++) this.enemies[a].render();
 
 	//move to info GUI class
 	ctx.font = "20px Pixel";

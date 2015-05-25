@@ -178,23 +178,53 @@ Bullet.prototype.update = function(deltaTime, id)
 	}	
 }
 
-Bullet.prototype.draw = function()
+Bullet.prototype.render = function()
 {
 	//drawRotatedImg(this.img, 0, 0, 32, 32, this.collider.pos.x - viewX - 16, this.collider.pos.y - viewY - 16, 32, 32, this.angle);
 	if(this.freeFloat)
+	{
+		ctx.save();
+		
 		if(this.fromPlayer)
-			renderStrokeColliderCircle(this.collider, "black", viewX, viewY);
+		{
+			ctx.fillStyle = "green";
+			ctx.shadowColor = 'rgba(0, 255, 0, 0.7)';	
+		}
 		else
-			renderStrokeColliderCircle(this.collider, "orange", viewX, viewY);
+		{
+			ctx.fillStyle = "orange";
+			ctx.shadowColor = 'rgba(255, 204, 0, 0.7)';				
+		} 
+			
+		ctx.shadowBlur = 15;
+		ctx.beginPath();
+		ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+		ctx.fill();		
+		ctx.restore();
+	}		
 }
 
 Bullet.prototype.multishotDraw = function()
 {
 	if(!this.freeFloat)
 	{
+		ctx.save();
+		
 		if(this.fromPlayer)
-			renderStrokeColliderCircle(this.collider, "red", viewX, viewY);
+		{
+			ctx.fillStyle = "red";
+			ctx.shadowColor = 'rgba(255, 0, 0, 0.7)';	
+		}
 		else
-			renderStrokeColliderCircle(this.collider, "yellow", viewX, viewY);
+		{
+			ctx.fillStyle = "yellow";
+			ctx.shadowColor = 'rgba(255, 255, 0, 0.7)';				
+		} 
+			
+		ctx.shadowBlur = 15;
+		ctx.beginPath();
+		ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+		ctx.fill();		
+		ctx.restore();
 	}
 }

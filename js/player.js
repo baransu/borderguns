@@ -38,11 +38,16 @@ Player.prototype.update = function(deltaTime)
 	}
 }
 
-Player.prototype.draw = function()
-{
-	//drawRotatedImg(character, 0, 0, 128, 128, CANVASW/2 - 128/2, CANVASH/2 - 128/2, 128, 128, mouseToPlayerAngle);
-	renderStrokeColliderCircle(this.collider, "green", viewX, viewY);
-	//renderStrokeColliderBox(player)
+Player.prototype.render = function()
+{	
+	ctx.save();
+	ctx.fillStyle = "green";
+	ctx.shadowBlur = 15;
+	ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+	ctx.beginPath();
+	ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+	ctx.fill();		
+	ctx.restore();
 }
 
 Player.prototype.toNode = function()

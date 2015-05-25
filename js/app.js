@@ -11,6 +11,8 @@ var CANVASW,
 var canvas;
 var ctx;
 var lastTime = Date.now();
+var mapCanvas;
+var mapCtx;
 //input
 var mouse = {};
 var mouseLeftPressed = false;
@@ -154,11 +156,15 @@ var animations = [];
 
 var backgroundMusic = new Audio("sounds/background.mp3"); 
 
+var miniMap;
+
 function load()
 {
 	canvas = document.getElementById("canvas");
 	ctx = canvas.getContext("2d");
-
+	mapCanvas = document.getElementById("mapCanvas");
+	mapCtx = mapCanvas.getContext("2d");
+	
 	//stuff for smooth animations?
 	ctx.mozImageSmoothingEnabled = false;
 	ctx.webkitImageSmoothingEnabled = false;
@@ -225,8 +231,9 @@ function load()
 
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
+	
 	CANVASW = canvas.width;
-	CANVASH = canvas.height;
+	CANVASH = canvas.height;	
 
 	//images links
 	floor.src = "img/level_floor.png";
@@ -323,9 +330,10 @@ function load()
 	}, false);
 	
 	backgroundMusic.volume = 0.2;
-	backgroundMusic.play();
-	console.log(pathfindingNodes)
-
+	backgroundMusic.play();	
+	
+	miniMap = new Map(mapCanvas, mapCtx);
+	
 	gameLoop();
 }
 
@@ -381,6 +389,7 @@ function update(deltaTime)
 		bloodEffect = true;
 		bloodEffectTimer -= deltaTime;
 	}
+	
 	if(bloodEffectTimer < 0)
 	{
 		bloodEffect = false;
@@ -465,17 +474,16 @@ function render()
 	}	
 
 	//enviroment
-	level.draw();
+	level.render();
 	//player
-	player.draw();
+	player.render();
 	
 	//animations
 	for(var i = 0; i < animations.length; i++) animations[i].render();
 	
 	//GUI STUFF
-	//cool effects
-	if(postE)
-		postEffects();
+	//cool effects :3
+	if(postE) postEffects();
 	
 	//dmgtext draw
 	for(var i = 0; i < dmgText.length; i++)	dmgText[i].render();
@@ -494,8 +502,8 @@ function render()
 		ctx.fillStyle = "white";
 		ctx.font="30px Pixel";
 		ctx.strokeStyle = "black";
-		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
-		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 250/2.1 ,CANVASH - 50/2.5);
+		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 80, CANVASH - 50 + 35);
+		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 80, CANVASH - 50 + 35);
 
 		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
@@ -542,9 +550,7 @@ function render()
 		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
 	}
 	
-	ctx.fillStyle = "black";
-	ctx.fillRect(CANVASW/2, CANVASH/2, 10,10)
-	
+	miniMap.render();	
 }
 
 function shootBullet(origin, direction)
@@ -632,18 +638,6 @@ function gradientCircleFilterBlood(x, y, r, c)
 
 function handleInput(deltaTime)
 {	
-//	if(canGame())
-//	{ 
-//        $(window).on("gamepadconnected", function() {
-//            console.log("connection event");
-//            useGamepad = true;
-//        });
-//        $(window).on("gamepaddisconnected", function() {
-//            console.log("disconnection event");
-//            useGamepad = false;
-//        });
-//    }
-
 	if(player.playerInput)
 	{
 		if(useGamepad)
@@ -744,11 +738,6 @@ function random(int)
 {
 	return Math.floor(Math.random() * int);
 }
-
-//function canGame()
-//{
-//	return "getGamepads" in navigator;
-//}
 
 function rollDice(N, S)
 {

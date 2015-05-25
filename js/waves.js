@@ -13,14 +13,14 @@ function Wave(difficulty)
 			new SAT.Vector(1000,800),
 		];	
 	
-		for(var a = 0; a < this.difficulty; a++){
-			var abc = Math.floor(Math.random() * 2)
+		for(var a = 0; a < this.difficulty; a++)
+		{
+			var abc = Math.floor(Math.random() * 2);
 			var s = Math.floor(Math.random() * spawns.length);
 			var hp = Math.floor(Math.random() * (1000 * this.difficulty/2)) + 100
 			var size = hp/enemiesSizeScale;
 
-			if(size > 50)
-				size = 50;
+			if(size > 50) size = 50;
 
 			this.enemies.push(new Enemy(enemiesTypes[abc], spawns[s].x, spawns[s].y, size, enemiesData[0].waypoints, hp))
 		}
@@ -31,20 +31,12 @@ function Wave(difficulty)
 
 Wave.prototype.update = function(deltaTime)
 {
-	//enemies update
-	for(var a = 0; a < this.enemies.length; a++){
-		this.enemies[a].update(deltaTime, a);
-	}
-
+	for(var a = 0; a < this.enemies.length; a++) this.enemies[a].update(deltaTime, a);
 }
 
-Wave.prototype.draw = function()
+Wave.prototype.render = function()
 {	
-	//enemies draw
-	for(var a = 0; a < this.enemies.length; a++)
-	{
-		this.enemies[a].draw();
-	}
+	for(var a = 0; a < this.enemies.length; a++) this.enemies[a].render();
 
 	//move to info GUI class
 	ctx.font = "20px Pixel";
