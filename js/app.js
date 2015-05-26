@@ -124,7 +124,7 @@ var followSearch = false;
 
 var gun = {
 	bulletType: "simple", //shotgun // multishot
-	richocetCount: 5,
+	richocetCount: 0,
 	bulletSpawnCooldown: 0,
 	bulletSpeed: 1500,
 	shotgunBullets: 5,
@@ -160,6 +160,17 @@ var miniMap;
 
 var particleSystems = [];
 
+var playerHitParticlesColor = {
+		start : {r : 255, g : 255, b : 255},
+		end : {r : 0, g : 255, b : 0},
+	}
+	
+var enemyHitParticlesColor = {
+	start : {r : 255, g : 255, b : 255},
+	end : {r : 255, g : 204, b : 0},
+}
+
+var enemiesSum = 0;
 function load()
 {
 	canvas = document.getElementById("canvas");
@@ -248,7 +259,7 @@ function load()
 	obstacles[0] = new SAT.Box(new SAT.Vector( 0, 0), 1, 1);
 
 	//walls
-	obstacles[1] = new SAT.Box(new SAT.Vector( 0, 0), wallSize, levelHeight - wallSize);
+	obstacles[1] = new SAT.Box(new SAT.Vector( 0, 0), wallSize, levelHeight);
 	obstacles[2] = new SAT.Box(new SAT.Vector( wallSize, levelHeight - wallSize), levelHeight - wallSize, wallSize);
 	obstacles[3] = new SAT.Box(new SAT.Vector( levelWidth - wallSize, wallSize), wallSize, levelHeight - wallSize);
 	obstacles[4] = new SAT.Box(new SAT.Vector( wallSize, 0), levelHeight - wallSize, wallSize);
@@ -332,19 +343,9 @@ function load()
 	}, false);
 	
 	backgroundMusic.volume = 0.2;
-//	backgroundMusic.play();	
+	backgroundMusic.play();	
 	
 	miniMap = new Map(mapCanvas, mapCtx);
-	
-	var pos = new SAT.Vector(CANVASW/2, CANVASH/2);
-	var gravity = new SAT.Vector(0, 0);
-	var color = {
-		start : {r : 255, g : 204, b : 0},
-		end : {r : 0, g : 255, b : 0},
-	}
-	
-	particleSystems.push(new ParticleSystem(0, pos, 100, 10, 1, 0, color, 0, Math.PI/2, 250, 50, gravity));
-//	ParticleSystem(globalLife, pos, particlesPerSecond, size, lifeTime, lifeTimeVariation, color, angle, angleVariation, velocity, velocityVariation, gravity)
 
 	gameLoop();
 }
@@ -375,7 +376,7 @@ function update(deltaTime)
 	//dmgtext
 	for(var i = 0; i < dmgText.length; i++) dmgText[i].update(deltaTime, i);
 	
-	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].update(deltaTime);
+	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].update(deltaTime, i);
 	
 	//gradient stuff
 	if(bgGradient == 0 && calcGradient == false)
@@ -462,7 +463,7 @@ function render()
 
 	//floor
 	ctx.fillStyle = "#2C322B";
-	ctx.fillRect(0 - viewX, 0 - viewY, 1920, 1080);
+	ctx.fillRect(0 - viewX, 0 - viewY, levelWidth, levelHeight);
 	//ctx.drawImage(floor, viewX, viewY, CANVASW, CANVASH, 0, 0, CANVASW, CANVASH)
 
 	//debuging stuff / to delete at the end
@@ -519,9 +520,10 @@ function render()
 		ctx.fillStyle = "white";
 		ctx.font="30px Pixel";
 		ctx.strokeStyle = "black";
-		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 80, CANVASH - 50 + 35);
-		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2 - 80, CANVASH - 50 + 35);
-
+		ctx.textAlign = "center";
+		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2, CANVASH - 30);
+		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2, CANVASH - 30);
+		ctx.textAlign = "left";
 		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
 	}

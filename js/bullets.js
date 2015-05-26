@@ -106,26 +106,53 @@ Bullet.prototype.update = function(deltaTime, id)
 	{
 		for(var a = 0; a < level.obstacles.length; a++){
 
-			if(this.collider.pos.x - this.radius <= level.obstacles[a].pos.x + level.obstacles[a].w && this.collider.pos.x + this.radius >= level.obstacles[a].pos.x &&
-			   this.collider.pos.y - this.radius <= level.obstacles[a].pos.y + level.obstacles[a].h && this.collider.pos.y + this.radius >= level.obstacles[a].pos.y){
+			var response = new SAT.Response();
+			var col = SAT.testPolygonCircle(level.obstacles[a].toPolygon(), this.collider, response);
+			
+			if(col){	
+						
+				collisonResponse(response, this.collider, level.obstacles[a]);
+				var dir = 0;
 
 				//left
-				if(this.lastPos.x <= level.obstacles[a].pos.x && this.lastPos.y >= level.obstacles[a].pos.y && this.lastPos.y <= level.obstacles[a].pos.y + level.obstacles[a].h){
+				if(this.collider.pos.x <= level.obstacles[a].pos.x && this.collider.pos.y >= level.obstacles[a].pos.y && this.collider.pos.y <= level.obstacles[a].pos.y + level.obstacles[a].h)
+				{
 					this.deltaV.x *= -1;
+					dir = Math.PI;					
 				}
 				//top
-				if(this.lastPos.y <= level.obstacles[a].pos.y && this.lastPos.x >= level.obstacles[a].pos.x && this.lastPos.x <= level.obstacles[a].pos.x + level.obstacles[a].w){
+				if(this.collider.pos.y <= level.obstacles[a].pos.y && this.collider.pos.x >= level.obstacles[a].pos.x && this.collider.pos.x <= level.obstacles[a].pos.x + level.obstacles[a].w)
+				{
 					this.deltaV.y *= -1;
+					dir = -Math.PI/2;
 				}
 				//right
-				if(this.lastPos.x >= level.obstacles[a].pos.x + level.obstacles[a].w && this.lastPos.y >= level.obstacles[a].pos.y && this.lastPos.y <= level.obstacles[a].pos.y + level.obstacles[a].h){
+				if(this.collider.pos.x >= level.obstacles[a].pos.x + level.obstacles[a].w && this.collider.pos.y >= level.obstacles[a].pos.y && this.collider.pos.y <= level.obstacles[a].pos.y + level.obstacles[a].h)
+				{
 					this.deltaV.x *= -1;
+					dir = 0;
 				}
 				//down
-				if(this.lastPos.y >= level.obstacles[a].pos.y + level.obstacles[a].h && this.lastPos.x >= level.obstacles[a].pos.x && this.lastPos.x <= level.obstacles[a].pos.x + level.obstacles[a].w){
+				if(this.collider.pos.y >= level.obstacles[a].pos.y + level.obstacles[a].h && this.collider.pos.x >= level.obstacles[a].pos.x && this.collider.pos.x <= level.obstacles[a].pos.x + level.obstacles[a].w)
+				{
 					this.deltaV.y *= -1;
+					dir = Math.PI/2;
 				}
-
+			
+				var color;
+				if(this.fromPlayer)
+				{
+					color = playerHitParticlesColor;
+				}
+				else
+				{
+					color = enemyHitParticlesColor;
+				}
+				var p = new SAT.Vector(this.collider.pos.x, this.collider.pos.y);
+				var gravity = new SAT.Vector(0, 9);	
+				particleSystems.push(new ParticleSystem(0.1, p, 10, 5, .1, 0, color, dir, Math.PI/2, 100, 100, gravity));
+				//ParticleSystem(                       gL,   p, pPS, s, life, lifeRng, col,    air, adirRng, speed, speedRng, gravity)
+				
 				this.richocetTimes--;
 				break;
 			}	
@@ -180,8 +207,10 @@ Bullet.prototype.update = function(deltaTime, id)
 
 Bullet.prototype.render = function()
 {
-	//drawRotatedImg(this.img, 0, 0, 32, 32, this.collider.pos.x - viewX - 16, this.collider.pos.y - viewY - 16, 32, 32, this.angle);
-	if(this.freeFloat)
+	var pos = this.collider.pos;
+	if(pos.x <= viewX + CANVASW && pos.x + this.collider.r >= viewX &&
+	   pos.y <= viewY + CANVASH && pos.y + this.collider.r >= viewY &&
+	   this.freeFloat)
 	{
 		ctx.save();
 		
@@ -201,7 +230,7 @@ Bullet.prototype.render = function()
 		ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
 		ctx.fill();		
 		ctx.restore();
-	}		
+	}		   
 }
 
 Bullet.prototype.multishotDraw = function()
@@ -217,8 +246,8 @@ Bullet.prototype.multishotDraw = function()
 		}
 		else
 		{
-			ctx.fillStyle = "yellow";
-			ctx.shadowColor = 'rgba(255, 255, 0, 0.7)';				
+			ctx.fillStyle = "orange";
+			ctx.shadowColor = 'rgba(255, 204, 0, 0.7)';				
 		} 
 			
 		ctx.shadowBlur = 15;

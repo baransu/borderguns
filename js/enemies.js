@@ -55,12 +55,16 @@ function Enemy(type, x, y, radius, waypoints, hp)
 	this.hit = false;
 	this.hitTimer = 0;
 	this.hitTime = 0.1;
+	
+	this.lastPath = 0;
+	this.calcPath = true;
+	
 }
 
 Enemy.prototype.update = function(deltaTime, id)
 {
 	this.id = id;
-
+	
 	if(this.waypoints != null && this.useWaypoints)
 	{
 
@@ -118,7 +122,8 @@ Enemy.prototype.update = function(deltaTime, id)
 
 				var obstaclesCol = true;
 				var obstaclesCount = 0;
-				for(var a = 1; a < obstacles.length; a++){
+				for(var a = 1; a < obstacles.length; a++)
+				{
 					this.toPlayerCollision = SAT.testPolygonPolygon(this.toPlayerRadar, level.obstacles[a].toPolygon());
 					if(this.toPlayerCollision)
 					{								
@@ -126,6 +131,11 @@ Enemy.prototype.update = function(deltaTime, id)
 					}
 					else
 					{
+						if(!this.playerIsInRange)
+						{
+							this.lastPlayerPos = player.toNode();
+							this.makePath(this.lastPlayerPos);
+						}
 						this.playerIsInRange = true;
 					}
 				}
@@ -141,15 +151,19 @@ Enemy.prototype.update = function(deltaTime, id)
 		case "melee":
 
 			this.useWaypoints = false;
-			this.toNodes = this.toNode(this.collider.pos)
 
-			this.lastPlayerPos = player.toNode();
-
-			this.makePath(this.lastPlayerPos);
+			if(this.calcPath)
+			{
+				this.toNodes = this.toNode(this.collider.pos);
+	
+				this.lastPlayerPos = player.toNode();
+				
+				this.makePath(this.lastPlayerPos);
+			}
 
 			this.deltaV = this.deltaFromPath();	
 
-			var meleeContact = SAT.testCircleCircle(this.collider, player.collider)
+			var meleeContact = SAT.testCircleCircle(this.collider, player.collider);
 
 			//got ya
 			if(meleeContact){
@@ -182,10 +196,6 @@ Enemy.prototype.update = function(deltaTime, id)
 		case "ranged":
 		break;
 		}
-		if(this.enemyType == "melee")
-		{
-			
-		}
 		
 		if(this.enemyType == "ranged" && this.bulletsTimer == 0)
 		{
@@ -193,12 +203,15 @@ Enemy.prototype.update = function(deltaTime, id)
 			var toPlayerX = player.collider.pos.x - this.collider.pos.x;
 			var toPlayerY = player.collider.pos.y - this.collider.pos.y;
 			var toPlayer = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-
-			this.toNodes = this.toNode(this.collider.pos)
-
-			this.lastPlayerPos = player.toNode();
-
-			this.makePath(this.lastPlayerPos);
+			
+			if(this.calcPath)
+			{
+				this.toNodes = this.toNode(this.collider.pos);
+	
+				this.lastPlayerPos = player.toNode();
+				
+				this.makePath(this.lastPlayerPos);
+			}
 
 			this.toPlayerRadar = new SAT.Polygon(new SAT.Vector(this.collider.pos.x, this.collider.pos.y),
 			[
@@ -286,18 +299,6 @@ Enemy.prototype.update = function(deltaTime, id)
 	//enemies avoiding themselfs
 	//console.log(this.toNodes);
 
-	for (var xx = -2; xx <= 2; xx++)
-	{
-        for (var yy = -2; yy <= 2; yy++)
-		{
-            var pom1 = xx + this.toNodes.x;
-            var pom2 = yy + this.toNodes.y;
-            
-            if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
-                pathfindingNodes[pom1][pom2] = 5;
-
-        }
-    }
 	//TIMERS
 	if(this.knockBackTimer > 0) this.knockBackTimer -= deltaTime;
 	if(this.knockBackTimer < 0) this.knockBackTimer = 0;
@@ -318,6 +319,17 @@ Enemy.prototype.update = function(deltaTime, id)
 			this.hitTimer = 0;
 		}
 	}
+	
+	this.lastPath += deltaTime;
+	if(this.lastPath > 1)
+	{
+		this.calcPath = true;
+		this.lastPath = 0;
+	}
+	else 
+	{
+		this.calcPath = false;
+	}
 }
 
 Enemy.prototype.applyDamage = function(damage)
@@ -335,7 +347,7 @@ Enemy.prototype.applyDamage = function(damage)
 	{		
 		isFollowing = false;
 		followEnemy = null;
-		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
+		//animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
 		level.wave.enemies.splice(this.id, 1);	
 	}
 	this.hit = true;
@@ -393,7 +405,7 @@ Enemy.prototype.deltaFromPath = function()
 	}
 	else
 	{
-		return this.lastDeltaV;
+		return new SAT.Vector();
 	}
 }
 
@@ -408,7 +420,7 @@ Enemy.prototype.collisionCheck = function()
 
 			if(col)
 			{
-				collisonResponse(response, this.collider, obstacles[a]);
+				collisonResponse(response, this.collider, level.obstacles[a]);
 			}		
 		}
 	}
@@ -425,34 +437,36 @@ Enemy.prototype.render = function()
 		}
 	}
 	
-	//drawing with shadows		
-	ctx.save();
-	
-	if(this.enemyType == "melee")
+	var pos = this.collider.pos;
+	if(pos.x <= viewX + CANVASW && pos.x + this.collider.r >= viewX &&
+	   pos.y <= viewY + CANVASH && pos.y + this.collider.r >= viewY)
 	{
-		ctx.fillStyle = "red";
-		if(this.hit)
-			ctx.shadowColor = 'rgba(255, 0, 0, 0.7)';
-		else 
-			ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+		//drawing with shadows		
+		ctx.save();
+		
+		if(this.enemyType == "melee")
+		{
+			ctx.fillStyle = "red";
+			if(this.hit)
+				ctx.shadowColor = 'rgba(255, 0, 0, 0.7)';
+			else 
+				ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+		}
+		else
+		{
+			ctx.fillStyle = "orange";
+			if(this.hit)
+				ctx.shadowColor = 'rgba(255, 204, 0, 0.7)';
+			else 
+				ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+		} 
+			
+		ctx.shadowBlur = 15;		
+		ctx.beginPath();
+		ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+		ctx.fill();		
+		ctx.restore();		
 	}
-	else
-	{
-		ctx.fillStyle = "orange";
-		if(this.hit)
-			ctx.shadowColor = 'rgba(255, 204, 0, 0.7)';
-		else 
-			ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-	} 
-		
-	ctx.shadowBlur = 15;
-	
-	
-		
-	ctx.beginPath();
-	ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
-	ctx.fill();		
-	ctx.restore();
 
 	if(gizomos)
 	{		
@@ -463,8 +477,8 @@ Enemy.prototype.render = function()
 		}
 	}
 
-	ctx.fillStyle = "green";
-	ctx.fillRect(this.forward.x - viewX, this.forward.y - viewY, 10,10);
+	//ctx.fillStyle = "green";
+	//ctx.fillRect(this.forward.x - viewX, this.forward.y - viewY, 10,10);
 
 	//hp bar
 	ctx.lineWidth = 2; 

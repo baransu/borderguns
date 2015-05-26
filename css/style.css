@@ -15,8 +15,8 @@ canvas {
 	position: absolute;
 	width: 20%;
 	right: 0;
-	top: 0;
-	margin: 2.5% 2.5% 0 0;
+	bottom: 0;
+	margin: 2.5%;
 }
 html, body {
 	width:100%;

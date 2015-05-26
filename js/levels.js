@@ -20,8 +20,6 @@ function Level()
 
 Level.prototype.update = function(deltaTime)
 {	
-	pathfindingFunction();
-
 	//checking player collision - move to player class?
 	for(var a = 1; a < this.obstacles.length; a++){
 

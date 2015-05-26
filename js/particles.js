@@ -13,30 +13,44 @@ function ParticleSystem(globalLife, pos, particlesPerSecond, size, lifeTime, lif
 	this.gravity = gravity;
 	
 	this.particles = [];
+	this.stop = false;
+	
+	this.globalLife = globalLife;
+	if(this.globalLife == 0)
+	{
+		this.loop = true;
+	}
+	else
+	{
+		this.loop = false;
+	}
 }
 
-ParticleSystem.prototype.update = function(deltaTime)
+ParticleSystem.prototype.update = function(deltaTime, id)
 {
-	//if(!this.stop)
-	//{
-	this.pos.x = player.collider.pos.x;
-	this.pos.y = player.collider.pos.y;
-	this.angle += Math.PI/90;
-	var newParticlesCount = this.particlesPerSecond * deltaTime;
-	for(var i = 0; i < newParticlesCount; i++)
+	if(!this.stop)
 	{
-		var angle = this.angle + getRandFloatInRange(0, this.angleVariation);
-		var offset = ((1 + i) / newParticlesCount * deltaTime);
-		var speed = this.speed + 0 + getRandFloatInRange(0, this.speedVariation);
-		var lifeTime = this.lifeTime + getRandFloatInRange(-this.lifeTimeVariation, this.lifeTimeVariation);
-		this.particles.push(new Particle(this.pos.x, this.pos.y, speed, angle, this.gravity, lifeTime, this.color));
+		var newParticlesCount = this.particlesPerSecond * deltaTime;
+		for(var i = 0; i < newParticlesCount; i++)
+		{
+			var angle = this.angle + getRandFloatInRange(0, this.angleVariation);
+			var offset = ((1 + i) / newParticlesCount * deltaTime);
+			var speed = this.speed + 0 + getRandFloatInRange(0, this.speedVariation);
+			var lifeTime = this.lifeTime + getRandFloatInRange(-this.lifeTimeVariation, this.lifeTimeVariation);
+			this.particles.push(new Particle(this.pos.x, this.pos.y, speed, angle, this.gravity, lifeTime, this.color));
+		}
+		
+		if(!this.loop)
+		{
+			this.globalLife -= deltaTime;
+			if(this.globalLife < 0) this.stop = true;
+		}
 	}
-		//if(!this.loop)
-		//{
-		//	this.life += deltaTime;
-		//	if(this.life > this.globalLife) this.stop = true;
-		//}
-	//}
+	else if(this.particles.lenght == 0)
+	{
+		particleSystems.splice(id, 1);
+	}
+		
 	
 	for(var i = 0; i < this.particles.length; i++) this.particles[i].update(deltaTime, i);
 }
@@ -45,8 +59,13 @@ ParticleSystem.prototype.render = function()
 {
 	for(var i = 0; i < this.particles.length; i++)
 	{
-		ctx.fillStyle = "rgba(" + this.particles[i].color.r + "," + this.particles[i].color.g + "," + this.particles[i].color.b + "," + this.particles[i].transparency/this.particles[i].lifeTime + ")";
-		ctx.fillRect(this.particles[i].pos.x - viewX, this.particles[i].pos.y - viewY, this.size, this.size);
+		var pos = this.particles[i].pos;
+		if(pos.x <= viewX + CANVASW && pos.x + this.size >= viewX &&
+		   pos.y <= viewY + CANVASH && pos.y + this.size >= viewY)
+		{
+			ctx.fillStyle = "rgba(" + this.particles[i].color.r + "," + this.particles[i].color.g + "," + this.particles[i].color.b + "," + this.particles[i].transparency/this.particles[i].lifeTime + ")";
+			ctx.fillRect(pos.x - viewX, pos.y - viewY, this.size, this.size);
+		}
 	}
 }
 
