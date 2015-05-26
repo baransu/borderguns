@@ -24,6 +24,9 @@ var gradientSpeed = 0.1;
 
 var titlescreenMusic = new Audio("sounds/lobby.mp3"); 
 
+var show = true;
+var count = 0;
+
 function load()
 {
 	canvas = document.getElementById("canvas");
@@ -92,6 +95,13 @@ function update(deltaTime)
 	
 	if(bgGradient > 0) bgGradient -= deltaTime;
 	if(bgGradient < 0) bgGradient = 0;	
+	
+	count += deltaTime;	
+	if(count > .5)
+	{
+		count = 0;
+		show = !show;
+	}
 }
 
 function render()
@@ -134,6 +144,16 @@ function render()
 
 	ctx.fillStyle = my_gradient;
 	ctx.fillRect(0,0,CANVASW,CANVASH);
+	
+	if(show)
+	{	
+		ctx.shadowColor = "black";
+		ctx.shadowBlur = 20;
+		ctx.fillStyle = "white";
+		ctx.font="30px Pixel";
+		ctx.textAlign = "center"; 
+		ctx.fillText("Press any key to start", CANVASW/2, CANVASH/2);	
+	}
 }
 
 function button(event)

@@ -16,7 +16,7 @@ function Player(x,y,width,height)
 	this.playerInput = true;
 	this.playerAlive = true;
 
-	this.godMode = true;
+	this.godMode = false;
 }
 
 Player.prototype.update = function(deltaTime)
