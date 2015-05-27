@@ -367,7 +367,6 @@ function update(deltaTime)
 	level.update(deltaTime);
 
 	player.update(deltaTime);
-
 	
 	//animations update
 	for(var i = 0; i < animations.length; i++) animations[i].update(i);
@@ -763,6 +762,7 @@ function handleInput(deltaTime)
 	{
 		inputTimer = inputCooldown;
 		levelRestart();
+		score = 0;
 	}
 	
 	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0)
@@ -809,10 +809,6 @@ function renderStrokeColliderBox(collider, color, viewX, viewY)
 {
 	ctx.fillStyle = color;
 	ctx.fillRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
-	//ctx.strokeStyle = color;
-	//ctx.strokeRect(collider.pos.x - viewX, collider.pos.y - viewY, collider.w, collider.h);
-	//ctx.font = "20px Georgia";
-	//ctx.fillText(name, collider.pos.x - viewX, collider.pos.y + 20 - viewY);
 }
 
 function renderStrokeColliderCircle(collider, color, viewX, viewY)
@@ -829,7 +825,6 @@ function renderStrokeColliderCircle(collider, color, viewX, viewY)
 function renderStrokeColliderPolygon(collider, color, viewX, viewY)
 {
 	ctx.fillStyle = color;
-	//ctx.strokeStyle = color;
 	ctx.beginPath();
 	ctx.moveTo(collider.calcPoints[0].x + collider.pos.x - viewX, collider.calcPoints[0].y + collider.pos.y - viewY);
 	
@@ -839,7 +834,6 @@ function renderStrokeColliderPolygon(collider, color, viewX, viewY)
 	}
 	
 	ctx.closePath();
-	//ctx.stroke();
 	ctx.fill();
 }
 
