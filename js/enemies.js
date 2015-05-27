@@ -6,7 +6,7 @@ function Enemy(type, x, y, radius, waypoints, hp)
 	this.enemyType = type;
 
 	this.radius = radius;
-	this.speed = 4;
+	this.speed = 6;
 	this.collider = new SAT.Circle(new SAT.Vector(x,y), radius);
 	this.isHeavy = false;
 	this.angle = 0;
@@ -18,7 +18,7 @@ function Enemy(type, x, y, radius, waypoints, hp)
 	this.radarLength = CANVASW/2;
 	this.toPlayerRadar;
 	this.toPlayerCollision = true;
-	this.playerIsInRange = false;
+	this.playerIsInRange = true;
 
 	this.useWaypoints = false;
 
@@ -57,8 +57,7 @@ function Enemy(type, x, y, radius, waypoints, hp)
 	this.hitTime = 0.1;
 	
 	this.lastPath = 0;
-	this.calcPath = true;
-	
+	this.calcPath = true;	
 }
 
 Enemy.prototype.update = function(deltaTime, id)
@@ -347,7 +346,8 @@ Enemy.prototype.applyDamage = function(damage)
 	{		
 		isFollowing = false;
 		followEnemy = null;
-		//animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
+		animations.push(new Animation("img/explosion3.png", this.collider.pos.x, this.collider.pos.y, 4800, 195, 25, false, 1, 0.6));	
+		score += 10;
 		level.wave.enemies.splice(this.id, 1);	
 	}
 	this.hit = true;

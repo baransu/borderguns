@@ -51,7 +51,7 @@ var useGamepad = false;
 
 //ai/ pathfinding
 var pathfindingNodes = [];
-var pathfindingNodesScale = 20;
+var pathfindingNodesScale = 30;
 
 var TILESIZE = 64;
 
@@ -154,7 +154,7 @@ var wallSize = 64;
 
 var animations = [];
 
-var backgroundMusic = new Audio("sounds/background.mp3"); 
+var backgroundMusic;
 
 var miniMap;
 
@@ -171,6 +171,11 @@ var enemyHitParticlesColor = {
 }
 
 var enemiesSum = 0;
+
+var jsonData;
+
+var score = 0;
+
 function load()
 {
 	canvas = document.getElementById("canvas");
@@ -255,99 +260,93 @@ function load()
 	crosshair.src = "img/crosshair.png";
 	character.src = "img/character.png";	
 
-	//fake collider to fix bug !!!
-	obstacles[0] = new SAT.Box(new SAT.Vector( 0, 0), 1, 1);
+	obstacles = [
+		//fake collider to fix bug !!!
+		new SAT.Box(new SAT.Vector( 0, 0), 1, 1),
 
-	//walls
-	obstacles[1] = new SAT.Box(new SAT.Vector( 0, 0), wallSize, levelHeight);
-	obstacles[2] = new SAT.Box(new SAT.Vector( wallSize, levelHeight - wallSize), levelHeight - wallSize, wallSize);
-	obstacles[3] = new SAT.Box(new SAT.Vector( levelWidth - wallSize, wallSize), wallSize, levelHeight - wallSize);
-	obstacles[4] = new SAT.Box(new SAT.Vector( wallSize, 0), levelHeight - wallSize, wallSize);
-
-	//fillars
-	obstacles[5] = new SAT.Box(new SAT.Vector( 200, 200), 200, 200);
-	obstacles[6] = new SAT.Box(new SAT.Vector( 1500, 200), 200, 200);
-	obstacles[7] = new SAT.Box(new SAT.Vector( 200, 600), 200, 200);
-	obstacles[8] = new SAT.Box(new SAT.Vector( 1500, 600), 200, 200);
-
-	/*
-	//inner walls
-	{
-		obstacles[5] = new SAT.Box(new SAT.Vector( 40, 270), 235, 50);
-		obstacles[6] = new SAT.Box(new SAT.Vector( 285, 30), 30, 110);
-		obstacles[7] = new SAT.Box(new SAT.Vector( 280, 270), 50, 280);
-		obstacles[8] = new SAT.Box(new SAT.Vector( 1650, 590), 210, 50);
-
-		obstacles[9] = new SAT.Box(new SAT.Vector( 1150, 50), 50, 580);
-		obstacles[10] = new SAT.Box(new SAT.Vector( 1200, 590), 255, 50);
-		obstacles[11] = new SAT.Box(new SAT.Vector( 950, 430), 50, 140);
-		obstacles[12] = new SAT.Box(new SAT.Vector( 750, 560), 240, 50);
-
-		obstacles[13] = new SAT.Box(new SAT.Vector( 40, 580), 630, 50);
-		obstacles[14] = new SAT.Box(new SAT.Vector( 620, 650), 50, 200);
-		obstacles[15] = new SAT.Box(new SAT.Vector( 620, 935), 50, 100);
-		obstacles[16] = new SAT.Box(new SAT.Vector( 795, 935), 50, 100);
-
-		obstacles[17] = new SAT.Box(new SAT.Vector( 795, 735), 50, 100);
-		obstacles[18] = new SAT.Box(new SAT.Vector( 790, 700), 350, 50);
-		obstacles[19] = new SAT.Box(new SAT.Vector( 1300, 935), 50, 100);
-		obstacles[20] = new SAT.Box(new SAT.Vector( 1300, 745), 50, 110);
-
-		obstacles[21] = new SAT.Box(new SAT.Vector( 950, 50), 50, 260);
-	}
-	*/
+		//walls
+		new SAT.Box(new SAT.Vector( 0, 0), wallSize, levelHeight),
+		new SAT.Box(new SAT.Vector( wallSize, levelHeight - wallSize), levelHeight - wallSize, wallSize),
+		new SAT.Box(new SAT.Vector( levelWidth - wallSize, wallSize), wallSize, levelHeight - wallSize),
+		new SAT.Box(new SAT.Vector( wallSize, 0), levelHeight - wallSize, wallSize),
 		
-	for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
-
-	pathfindingFunction();
-
-	//player start pos
-	playerStartPos = new SAT.Vector(1800,100);
-
-	//adding player
-	player = new Player(playerStartPos.x, playerStartPos.y);
-
-	//diagonal pathfinding
-	pathfindingGraph = new Graph(pathfindingNodes)
-	pathfindingGraph.diagonal = true;
-
-	//enemies data standard so far
-	//types of enemies
-	enemiesData[0] = {
-		startPos: new SAT.Vector(500,300),
-		radius: 30,
-		waypoints: [
-			new SAT.Vector(900,300),
-			new SAT.Vector(900,500)
-		],
-		hp: 1000,
-	}
-
-	if(enemies.length > 0)
-	{
-		var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
-		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
-		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-	}
+	];
 	
-	level = new Level(0);
-
-	//start game 
-	if(ls.getItem("base") == null)
-		ls.setItem("base", 0);
-
-	backgroundMusic.addEventListener("ended", function()
-	{
-	    this.currentTime = 0;
-	    this.play();
-	}, false);
 	
-	backgroundMusic.volume = 0.2;
-	backgroundMusic.play();	
-	
-	miniMap = new Map(mapCanvas, mapCtx);
+	loadJSON("level.json", function(response) {
 
-	gameLoop();
+		jsonData = JSON.parse(response);	
+				
+		var abc = jsonData.length;		
+		for(var i = 0; i < abc; i++)
+		{
+			var o = new SAT.Box(new SAT.Vector( jsonData[i].wall.x, jsonData[i].wall.y), jsonData[i].wall.w, jsonData[i].wall.h);
+			obstacles.push(o);
+		}
+		
+		
+		for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
+	
+		pathfindingFunction();
+	
+		//player start pos
+		playerStartPos = new SAT.Vector(2417,2779);
+	
+		//adding player
+		player = new Player(playerStartPos.x, playerStartPos.y);
+	
+		//diagonal pathfinding
+		pathfindingGraph = new Graph(pathfindingNodes);
+		pathfindingGraph.diagonal = true;
+	
+		//enemies data standard so far
+		//types of enemies
+		enemiesData[0] = {
+			startPos: new SAT.Vector(500,300),
+			radius: 30,
+			waypoints: [
+				new SAT.Vector(900,300),
+				new SAT.Vector(900,500)
+			],
+			hp: 1000,
+		}
+	
+		if(enemies.length > 0)
+		{
+			var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
+			var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
+			toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+		}
+		
+		level = new Level(0);
+	
+		//start game 
+		if(ls.getItem("base") == null)
+			ls.setItem("base", 0);
+	
+		if(getRandomBool())
+		{
+			backgroundMusic = new Audio("sounds/background1.mp3"); 
+		}
+		else
+		{
+			backgroundMusic = new Audio("sounds/background2.mp3"); 
+		}
+	
+		backgroundMusic.addEventListener("ended", function()
+		{
+		    this.currentTime = 0;
+		    this.play();
+		}, false);
+		
+		backgroundMusic.volume = 0.2;
+		backgroundMusic.play();	
+		
+		miniMap = new Map(mapCanvas, mapCtx);
+	 	
+		gameLoop();
+		
+	});	
 }
 
 function gameLoop()
@@ -491,8 +490,7 @@ function render()
 	//enviroment
 	level.render();
 	//player
-	player.render();
-	
+	player.render();	
 	
 	//animations
 	for(var i = 0; i < animations.length; i++) animations[i].render();
@@ -511,10 +509,16 @@ function render()
 	if(!win && player.playerAlive)
 	{
 		//hp bar
-		ctx.strokeStyle = "white";
-		ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50);
+		ctx.save();
+		//ctx.strokeStyle = "white";
+		//ctx.strokeRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50);
+		ctx.shadowColor = "black";
+		ctx.shadowBlur = 20;
+		ctx.fillStyle = "black";
+		ctx.fillRect(CANVASW/2 - 250/2, CANVASH - 50, 250, 50);
 		ctx.fillStyle = "red";
 		ctx.fillRect(CANVASW/2 - 250/2, CANVASH - 50, 250 * player.playerHealthPercentage, 50);
+		ctx.restore();
 
 		//hp bar text
 		ctx.fillStyle = "white";
@@ -522,51 +526,51 @@ function render()
 		ctx.strokeStyle = "black";
 		ctx.textAlign = "center";
 		ctx.strokeText("" + player.health + "/" + player.maxHealth + "", CANVASW/2, CANVASH - 30);
-		ctx.fillText("" + player.health + "/" + player.maxHealth + "", CANVASW/2, CANVASH - 30);
+		ctx.fillText(player.health + "/" + player.maxHealth, CANVASW/2, CANVASH - 30);
 		ctx.textAlign = "left";
 		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
-	}
-
-	if(win || !player.playerAlive)
-	{
-		//copyrights
-		ctx.fillStyle = "white";
-		ctx.font="15px Pixel";
-		ctx.strokeStyle = "black";
-		ctx.strokeText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
-		ctx.fillText("LA-Hotline/Borderguns project by Tomasz Cichocinski. Version: 0.1 (in development)", 0,CANVASH - 5);
 	}
 	
 	//game over
 	if(!player.playerAlive)
 	{
+		ctx.save();
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
-		//ctx.fillRect(CANVASW/2 - 240, CANVASH/2 - 65, 500, 100)
 		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
-		ctx.fillText("Press R to try again", CANVASW/2 - 200, CANVASH/2);		
+		ctx.textAlign = "center";
+		ctx.shadowColor = "black";
+		ctx.shadowBlur = 20;
+		ctx.fillText("Press R to try again", CANVASW/2, CANVASH/2);		
 		
-		var abc = ls.getItem("base");
-		if(level.waveDif > abc)
-			ls.setItem("base", level.waveDif);
-		ctx.font = "20px Pixel";
-		ctx.fillText("Best: " + abc, 0, 100);
+		ctx.fillStyle = 'white';
+		var abc = parseFloat(ls.getItem("base"));
+		if(score > abc)
+			ls.setItem("base", score.toFixed(3));
 		
 		ctx.font = "20px Pixel";
-		ctx.fillText("Your score: " + level.waveDif, 0, 80);
+		ctx.fillText("Best: " + abc.toFixed(3), CANVASW/2, 100);
+		
+		ctx.font = "20px Pixel";
+		ctx.fillText("Your score: " + score.toFixed(3), CANVASW/2, 80);
+		ctx.restore();
 	}	
 
 	//win
 	if(win)
 	{
+		ctx.save();
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
-		//ctx.fillRect(CANVASW/2 - 330, CANVASH/2 - 65, 730, 100);
 		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
 		ctx.strokeStyle = "back";	
-		ctx.strokeText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
-		ctx.fillText("You won! Po press R tlay again", CANVASW/2 - 300, CANVASH/2);
+		ctx.textAlign = "center";
+		ctx.shadowColor = "black";
+		ctx.shadowBlur = 20;
+		ctx.fillText("You won! Po press R play again", CANVASW/2, CANVASH/2);
+		ctx.textAlign = "left";
+		ctx.restore();
 	}
 	
 	miniMap.render();	
@@ -661,7 +665,7 @@ function gradientCircleFilterBlood(x, y, r, c)
 }
 
 function handleInput(deltaTime)
-{	
+{		
 	if(player.playerInput)
 	{
 		if(useGamepad)
@@ -706,18 +710,35 @@ function handleInput(deltaTime)
 		{
 			player.pos.x += speed * deltaTime;	
 		}
+		
 	}
-
-	if(input.isDown("z") && gizomos && inputTimer === 0)
+	//simple
+	if(input.isDown("1") && inputTimer == 0)
 	{
-			gizomos = false;
-			inputTimer = inputCooldown;
+		gun.bulletType = "simple";
+		gun.bulletSpawnCooldown = 0.02;
+		inputTimer = inputCooldown;
+	}
+	//multishot
+	if(input.isDown("2") && inputTimer == 0)
+	{
+		gun.bulletType = "multishot";
+		gun.bulletSpawnCooldown = 0.05;
+		inputTimer = inputCooldown;
+	}
+	//shotgun
+	if(input.isDown("3") && inputTimer == 0)
+	{
+		gun.bulletType = "shotgun";
+		gun.bulletSpawnCooldown = 0.05;
+		inputTimer = inputCooldown;
 	}
 	
-	if(input.isDown("z") && !gizomos && inputTimer === 0)
+
+	if(input.isDown("z") && inputTimer === 0)
 	{
-			gizomos = true;
-			inputTimer = inputCooldown;
+		gizomos = !gizomos;
+		inputTimer = inputCooldown;
 	}
 
 	if(input.isDown("e") && postE && inputTimer === 0)
@@ -934,16 +955,43 @@ function pathfindingFunction()
 	}
 }
 
+function getRandomInt(min, max)
+{
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomBool()
+{
+    if(Math.random() < 0.5)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+function loadJSON(file, callback) {
+
+		var xobj = new XMLHttpRequest();
+		xobj.overrideMimeType("application/json");
+		xobj.open('GET', file, true);
+		xobj.onreadystatechange = function ()
+		{
+			if (xobj.readyState == 4 && xobj.status == "200")
+			{
+				callback(xobj.responseText);
+			}
+		}
+		
+		xobj.send(null);	
+	}
+
 //################ CODE NAME: BORDERGUNS ###################
-//################ v 0.1 in development ###################
+//################ v 0.1.0 ###################
 //################ WIP/IDEAS/TO DO/THOUGHTS ###################
 
-//################ TO DO ###################
-//particles
-//game end statement
-//title screen 
-//level design
-//boss wave
-//tiles sprites
-//gui
-//enemies/player/bullet/everything art style
+//in development 128 dni
+//linijek: 2496 (mojego)
+//edytor do poziomow

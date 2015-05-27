@@ -40,12 +40,13 @@ Map.prototype.render = function()
 	}
 	
 	
+	
 	for(var i = 0; i < level.obstacles.length; i++)
 	{
 		this.ctx.fillStyle = "black";
 		this.ctx.fillRect(level.obstacles[i].pos.x/scale, level.obstacles[i].pos.y/scale, level.obstacles[i].w/scale, level.obstacles[i].h/scale);
 	}	
-	
+		
 	for(var i = 0; i < level.wave.enemies.length; i++)
 	{
 		this.ctx.beginPath();
@@ -63,13 +64,9 @@ Map.prototype.render = function()
 	this.ctx.arc(player.collider.pos.x/scale, player.collider.pos.y/scale, player.collider.r/scale * 3, 0, 2 * Math.PI, false);
 
 	this.ctx.fillStyle = "green";		
-	this.ctx.fill();
+	this.ctx.fill();	
 	
+	this.ctx.lineWidth = 1;
+	this.ctx.strokeStyle = "white";
+	this.ctx.strokeRect(viewX/scale, viewY/scale, CANVASW/scale, CANVASH/scale);
 }
-//ctx.beginPath();
-//ctx.arc(collider.pos.x, collider.pos.y, collider.r, 0, 2 * Math.PI, false);
-//ctx.strokeStyle = "black";
-//ctx.lineWidth = 5;
-//ctx.stroke();
-//ctx.fillStyle = color;
-//ctx.fill();

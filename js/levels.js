@@ -1,3 +1,4 @@
+/* global Wave */
 function Level()
 {
 	this.id = 0;
@@ -15,7 +16,6 @@ function Level()
 	}
 
 	this.init();
-
 }
 
 Level.prototype.update = function(deltaTime)
@@ -61,8 +61,16 @@ Level.prototype.render = function()
 	for(var a = 0; a < this.bullets.length; a++) this.bullets[a].render();
 	
 	//obstacles draw
-	for(var a = 1; a < this.obstacles.length; a++)
-		renderStrokeColliderBox(this.obstacles[a], "black", viewX, viewY);
+	for(var i = 1; i < this.obstacles.length; i++)
+	{
+		ctx.save();
+		ctx.fillStyle = "black";
+		ctx.shadowColor = "black";
+		ctx.shadowBlur = "20";
+		ctx.fillRect(this.obstacles[i].pos.x - viewX, this.obstacles[i].pos.y - viewY, this.obstacles[i].w, this.obstacles[i].h);
+		ctx.restore();
+	}
+		//renderStrokeColliderBox(this.obstacles[a], "black", viewX, viewY);
 
 	//waves draw - mainly enemies
 	this.wave.render();

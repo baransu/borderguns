@@ -148,11 +148,16 @@ Bullet.prototype.update = function(deltaTime, id)
 				{
 					color = enemyHitParticlesColor;
 				}
-				var p = new SAT.Vector(this.collider.pos.x, this.collider.pos.y);
-				var gravity = new SAT.Vector(0, 9);	
-				particleSystems.push(new ParticleSystem(0.1, p, 10, 5, .1, 0, color, dir, Math.PI/2, 100, 100, gravity));
-				//ParticleSystem(                       gL,   p, pPS, s, life, lifeRng, col,    air, adirRng, speed, speedRng, gravity)
 				
+				var pos = this.collider.pos;
+				if(pos.x <= viewX + CANVASW && pos.x + this.collider.r >= viewX &&
+				   pos.y <= viewY + CANVASH && pos.y + this.collider.r >= viewY)
+				{
+					var p = new SAT.Vector(this.collider.pos.x, this.collider.pos.y);
+					var gravity = new SAT.Vector(0, 9);	
+					particleSystems.push(new ParticleSystem(0.1, p, 10, 5, .1, 0, color, dir, Math.PI/2, 100, 100, gravity));
+					//ParticleSystem(                       gL,   p, pPS, s, life, lifeRng, col,    air, adirRng, speed, speedRng, gravity)
+				}
 				this.richocetTimes--;
 				break;
 			}	
@@ -161,6 +166,9 @@ Bullet.prototype.update = function(deltaTime, id)
 
 	if(this.richocetTimes < 0)
 	{
+		if(this.fromPlayer)
+			score += 0.001;
+			
 		level.bullets.splice(id, 1);
 	}
 
@@ -190,6 +198,8 @@ Bullet.prototype.update = function(deltaTime, id)
 
 					dmgText.push(new FloatingText(level.wave.enemies[a].collider.pos.x, level.wave.enemies[a].collider.pos.y, this.damage, this.crit, mainColor, outlineColor))
 					level.wave.enemies[a].applyDamage(this.damage);
+					if(this.fromPlayer)
+						score += 0.001;
 					level.bullets.splice(id, 1);
 				}
 

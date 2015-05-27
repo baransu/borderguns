@@ -45,7 +45,7 @@ Player.prototype.render = function()
 	ctx.shadowBlur = 15;
 	ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
 	ctx.beginPath();
-	ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false); // Draws a circle
+	ctx.arc(this.collider.pos.x - viewX, this.collider.pos.y - viewY, this.collider.r, 0, 2 * Math.PI, false);
 	ctx.fill();		
 	ctx.restore();
 }

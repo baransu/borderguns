@@ -145,6 +145,19 @@ function render()
 	ctx.fillStyle = my_gradient;
 	ctx.fillRect(0,0,CANVASW,CANVASH);
 	
+	ctx.fillStyle = "white";
+	ctx.font = "150px Pixel";
+	ctx.shadowColor = "black";
+	ctx.shadowBlur = 20;
+	ctx.textAlign = "center"; 
+	ctx.fillText("BORDERGUNS", CANVASW/2, CANVASH/2 - 150);
+	
+	ctx.shadowColor = "black";
+	ctx.shadowBlur = 20;
+	ctx.textAlign = "center"; 
+	ctx.font="15px Pixel";
+	ctx.fillText("Borderguns project by Tomasz Cichocinski. Version: 0.1.0", CANVASW/2,CANVASH - 15);
+	
 	if(show)
 	{	
 		ctx.shadowColor = "black";
