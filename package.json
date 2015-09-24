@@ -1,0 +1,22 @@
+{
+  "name": "borderguns",
+  "version": "1.0.0",
+  "description": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Baransu/Borderguns.git"
+  },
+  "author": "Tomasz Cichocinski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Baransu/Borderguns/issues"
+  },
+  "homepage": "https://github.com/Baransu/Borderguns#readme",
+  "devDependencies": {
+    "electron-prebuilt": "^0.33.1"
+  }
+}

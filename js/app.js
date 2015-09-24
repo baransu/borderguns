@@ -164,7 +164,7 @@ var playerHitParticlesColor = {
 		start : {r : 255, g : 255, b : 255},
 		end : {r : 0, g : 255, b : 0},
 	}
-	
+
 var enemyHitParticlesColor = {
 	start : {r : 255, g : 255, b : 255},
 	end : {r : 255, g : 204, b : 0},
@@ -182,13 +182,13 @@ function load()
 	ctx = canvas.getContext("2d");
 	mapCanvas = document.getElementById("mapCanvas");
 	mapCtx = mapCanvas.getContext("2d");
-	
+
 	//stuff for smooth animations?
 	ctx.mozImageSmoothingEnabled = false;
 	ctx.webkitImageSmoothingEnabled = false;
 	ctx.msImageSmoothingEnabled = false;
 	ctx.imageSmoothingEnabled = false;
-	
+
 	if (canvas.requestFullscreen)
 	{
 	  canvas.requestFullscreen();
@@ -205,13 +205,13 @@ function load()
 	{
 	  canvas.webkitRequestFullscreen();
 	}
-	
+
 
 	document.addEventListener('mousemove', function(e)
 	{
 		if(!isFollowing)
-		{			
-			mouse.x = e.clientX || e.pageX; 
+		{
+			mouse.x = e.clientX || e.pageX;
 			mouse.y = e.clientY || e.pageY;
 		}
 
@@ -245,20 +245,20 @@ function load()
 	document.addEventListener('contextmenu', function(e)
 	{
 		e.preventDefault();
-	}, false);	
+	}, false);
 
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
-	
+
 	CANVASW = canvas.width;
-	CANVASH = canvas.height;	
+	CANVASH = canvas.height;
 
 	//images links
 	floor.src = "img/level_floor.png";
 	walls.src = "img/level_walls.png";
 	bullet.src = "img/bullet.png";
 	crosshair.src = "img/crosshair.png";
-	character.src = "img/character.png";	
+	character.src = "img/character.png";
 
 	obstacles = [
 		//fake collider to fix bug !!!
@@ -269,84 +269,83 @@ function load()
 		new SAT.Box(new SAT.Vector( wallSize, levelHeight - wallSize), levelHeight - wallSize, wallSize),
 		new SAT.Box(new SAT.Vector( levelWidth - wallSize, wallSize), wallSize, levelHeight - wallSize),
 		new SAT.Box(new SAT.Vector( wallSize, 0), levelHeight - wallSize, wallSize),
-		
-	];
-	
-	
-	loadJSON("level.json", function(response) {
 
-		jsonData = JSON.parse(response);	
-				
-		var abc = jsonData.length;		
-		for(var i = 0; i < abc; i++)
-		{
-			var o = new SAT.Box(new SAT.Vector( jsonData[i].wall.x, jsonData[i].wall.y), jsonData[i].wall.w, jsonData[i].wall.h);
-			obstacles.push(o);
-		}
-		
-		
-		for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
-	
-		pathfindingFunction();
-	
-		//player start pos
-		playerStartPos = new SAT.Vector(2417,2779);
-	
-		//adding player
-		player = new Player(playerStartPos.x, playerStartPos.y);
-	
-		//diagonal pathfinding
-		pathfindingGraph = new Graph(pathfindingNodes);
-		pathfindingGraph.diagonal = true;
-	
-		//enemies data standard so far
-		//types of enemies
-		enemiesData[0] = {
-			startPos: new SAT.Vector(500,300),
-			radius: 30,
-			waypoints: [
-				new SAT.Vector(900,300),
-				new SAT.Vector(900,500)
-			],
-			hp: 1000,
-		}
-	
-		if(enemies.length > 0)
-		{
-			var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
-			var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
-			toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
-		}
-		
-		level = new Level(0);
-	
-		//start game 
-		if(ls.getItem("base") == null)
-			ls.setItem("base", 0);
-	
-		if(getRandomBool())
-		{
-			backgroundMusic = new Audio("sounds/background1.mp3"); 
-		}
-		else
-		{
-			backgroundMusic = new Audio("sounds/background2.mp3"); 
-		}
-	
-		backgroundMusic.addEventListener("ended", function()
-		{
-		    this.currentTime = 0;
-		    this.play();
-		}, false);
-		
-		backgroundMusic.volume = 0.2;
-		backgroundMusic.play();	
-		
-		miniMap = new Map(mapCanvas, mapCtx);
-	 	
-		gameLoop();
-		
-	});	
+	];
+
+	var fs = require('fs')
+	//var contents = fs.readFileSync(process.resourcesPath + '/app/' + 'level.json', 'utf8')
+	var contents = fs.readFileSync('level.json', 'utf8')
+
+	jsonData = JSON.parse(contents);
+
+	var abc = jsonData.length;
+	for(var i = 0; i < abc; i++)
+	{
+		var o = new SAT.Box(new SAT.Vector( jsonData[i].wall.x, jsonData[i].wall.y), jsonData[i].wall.w, jsonData[i].wall.h);
+		obstacles.push(o);
+	}
+
+
+	for(var a = 0; a < obstacles.length; a++) obstacles[a].isHeavy = true;
+
+	pathfindingFunction();
+
+	//player start pos
+	playerStartPos = new SAT.Vector(2417,2779);
+
+	//adding player
+	player = new Player(playerStartPos.x, playerStartPos.y);
+
+	//diagonal pathfinding
+	pathfindingGraph = new Graph(pathfindingNodes);
+	pathfindingGraph.diagonal = true;
+
+	//enemies data standard so far
+	//types of enemies
+	enemiesData[0] = {
+		startPos: new SAT.Vector(500,300),
+		radius: 30,
+		waypoints: [
+			new SAT.Vector(900,300),
+			new SAT.Vector(900,500)
+		],
+		hp: 1000,
+	}
+
+	if(enemies.length > 0)
+	{
+		var toPlayerX = enemies[0].collider.pos.x - player.collider.pos.x;
+		var toPlayerY = enemies[0].collider.pos.y - player.collider.pos.y;
+		toLastEnemy = Math.sqrt(Math.pow(toPlayerX,2) + Math.pow(toPlayerY,2));
+	}
+
+	level = new Level(0);
+
+	//start game
+	if(ls.getItem("base") == null)
+		ls.setItem("base", 0);
+
+	if(getRandomBool())
+	{
+		backgroundMusic = new Audio("sounds/background1.mp3");
+	}
+	else
+	{
+		backgroundMusic = new Audio("sounds/background2.mp3");
+	}
+
+	backgroundMusic.addEventListener("ended", function()
+	{
+	    this.currentTime = 0;
+	    this.play();
+	}, false);
+
+	backgroundMusic.volume = 0.2;
+	backgroundMusic.play();
+
+	miniMap = new Map(mapCanvas, mapCtx);
+
+	gameLoop();
 }
 
 function gameLoop()
@@ -367,30 +366,30 @@ function update(deltaTime)
 	level.update(deltaTime);
 
 	player.update(deltaTime);
-	
+
 	//animations update
 	for(var i = 0; i < animations.length; i++) animations[i].update(i);
 
 	//dmgtext
 	for(var i = 0; i < dmgText.length; i++) dmgText[i].update(deltaTime, i);
-	
+
 	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].update(deltaTime, i);
-	
+
 	//gradient stuff
 	if(bgGradient == 0 && calcGradient == false)
 	{
 		bgGradient = 1;
 		calcGradient = true;
 	}
-	
+
 	//variable to render object in right position
 	viewX = player.pos.x - CANVASW/2;
 	viewY = player.pos.y - CANVASH/2;
 
-	//timers		
+	//timers
 	if(bulletTimer > 0) bulletTimer -= deltaTime;
 	if(bulletTimer < 0) bulletTimer = 0;
-	
+
 	if(bgGradient > 0) bgGradient -= deltaTime;
 	if(bgGradient < 0) bgGradient = 0;
 
@@ -402,21 +401,21 @@ function update(deltaTime)
 		bloodEffect = true;
 		bloodEffectTimer -= deltaTime;
 	}
-	
+
 	if(bloodEffectTimer < 0)
 	{
 		bloodEffect = false;
 		bloodEffectTimer = 0;
 	}
 
-	if(bloodEffectTimer == 0) bloodEffect = false;	
+	if(bloodEffectTimer == 0) bloodEffect = false;
 }
 
 function render()
 {
 	//clearing canvas
-	ctx.clearRect(0, 0, CANVASH, CANVASH);		
-	
+	ctx.clearRect(0, 0, CANVASH, CANVASH);
+
 	//changing background gradient color
 	if(calcGradient)
 	{
@@ -447,7 +446,7 @@ function render()
 			colorIndices[3] = ( colorIndices[3] + Math.floor( 1 + Math.random() * (colors.length - 1))) % colors.length;
 		}
 	}
-	
+
 	//still gradient stuff
 	var my_gradient = ctx.createLinearGradient(0, 0, CANVASW/2, CANVASH);
 	my_gradient.addColorStop(0, gradientColors[0]);
@@ -455,7 +454,7 @@ function render()
 
 	//background
 	ctx.fillStyle = my_gradient;
-	
+
 	//ctx.fillStyle = "grey";
 	ctx.fillRect(0,0,CANVASW,CANVASH);
 
@@ -483,26 +482,26 @@ function render()
 
 				ctx.strokeRect(a * pathfindingNodesScale - viewX, b * pathfindingNodesScale - viewY, pathfindingNodesScale,pathfindingNodesScale);
 			}
-		}			
-	}	
+		}
+	}
 
 	//enviroment
 	level.render();
 	//player
-	player.render();	
-	
+	player.render();
+
 	//animations
 	for(var i = 0; i < animations.length; i++) animations[i].render();
 	//particles
 	for(var i = 0; i < particleSystems.length; i++)	particleSystems[i].render();
-	
+
 	//GUI STUFF
 	//cool effects :3
 	if(postE) postEffects();
-	
+
 	//dmgtext draw
 	for(var i = 0; i < dmgText.length; i++)	dmgText[i].render();
-	
+
 	ctx.lineWidth = 1;
 
 	if(!win && player.playerAlive)
@@ -530,7 +529,7 @@ function render()
 		//crosshair
 		ctx.drawImage(crosshair, crosshairPosition.x - 16, crosshairPosition.y - 16);
 	}
-	
+
 	//game over
 	if(!player.playerAlive)
 	{
@@ -541,20 +540,20 @@ function render()
 		ctx.textAlign = "center";
 		ctx.shadowColor = "black";
 		ctx.shadowBlur = 20;
-		ctx.fillText("Press R to try again", CANVASW/2, CANVASH/2);		
-		
+		ctx.fillText("Press R to try again", CANVASW/2, CANVASH/2);
+
 		ctx.fillStyle = 'white';
 		var abc = parseFloat(ls.getItem("base"));
 		if(score > abc)
 			ls.setItem("base", score.toFixed(3));
-		
+
 		ctx.font = "20px Pixel";
 		ctx.fillText("Best: " + abc.toFixed(3), CANVASW/2, 100);
-		
+
 		ctx.font = "20px Pixel";
 		ctx.fillText("Your score: " + score.toFixed(3), CANVASW/2, 80);
 		ctx.restore();
-	}	
+	}
 
 	//win
 	if(win)
@@ -563,7 +562,7 @@ function render()
 		ctx.fillStyle = "rgba(0,0,0,0.7)";
 		ctx.font = "50px Pixel";
 		ctx.fillStyle = "white";
-		ctx.strokeStyle = "back";	
+		ctx.strokeStyle = "back";
 		ctx.textAlign = "center";
 		ctx.shadowColor = "black";
 		ctx.shadowBlur = 20;
@@ -571,8 +570,8 @@ function render()
 		ctx.textAlign = "left";
 		ctx.restore();
 	}
-	
-	miniMap.render();	
+
+	miniMap.render();
 }
 
 function lerp(a, b, u)
@@ -593,7 +592,7 @@ function shootBullet(origin, direction)
 	    dmg += 0 + rollDice(10, 10);
 		crit = true;
 	}
-	
+
 	if(gun.bulletType == "shotgun")
 	{
 		var bCount = Math.floor(Math.abs(gun.shotgunBullets)/2);
@@ -633,7 +632,7 @@ function postEffects()
 		ctx.strokeStyle = "rgba(0,0,0,"+ (Math.random() * (0.05 - 0) + 0) +")";
 		ctx.strokeRect(0,a * 5,CANVASW,5);
 	}
-	
+
 	if(bloodEffect || !player.playerAlive)
 		gradientCircleFilterBlood(player.collider.pos.x - viewX, player.collider.pos.y - viewY, CANVASW, "255,0,0");
 	else
@@ -664,7 +663,7 @@ function gradientCircleFilterBlood(x, y, r, c)
 }
 
 function handleInput(deltaTime)
-{		
+{
 	if(player.playerInput)
 	{
 		if(useGamepad)
@@ -684,7 +683,7 @@ function handleInput(deltaTime)
 	  			player.pos.x += leftX * deltaTime * speed;
 
 	  		if(leftY > 0.2 || leftY < -0.2)
-	  			player.pos.y += leftY * deltaTime * speed; 
+	  			player.pos.y += leftY * deltaTime * speed;
 
   			playerForward = new SAT.Vector(leftX, leftY);
 		}
@@ -697,7 +696,7 @@ function handleInput(deltaTime)
 		//down 83
 		if(input.isDown("s"))
 		{
-			player.pos.y += speed * deltaTime;	
+			player.pos.y += speed * deltaTime;
 		}
 		//left 65
 		if(input.isDown("a"))
@@ -707,9 +706,9 @@ function handleInput(deltaTime)
 		//right 68
 		if(input.isDown("d"))
 		{
-			player.pos.x += speed * deltaTime;	
+			player.pos.x += speed * deltaTime;
 		}
-		
+
 	}
 	//simple
 	if(input.isDown("1") && inputTimer == 0)
@@ -732,7 +731,7 @@ function handleInput(deltaTime)
 		gun.bulletSpawnCooldown = 0.05;
 		inputTimer = inputCooldown;
 	}
-	
+
 
 	if(input.isDown("z") && inputTimer === 0)
 	{
@@ -745,26 +744,26 @@ function handleInput(deltaTime)
 			postE = false;
 			inputTimer = inputCooldown;
 	}
-	
+
 	if(input.isDown("e") && !postE && inputTimer === 0)
 	{
 			postE = true;
 			inputTimer = inputCooldown;
 	}
-	
+
 	if(input.isDown("q") && !postE && inputTimer === 0 && !followSearch)
 	{
 			followSearch = true;
 			inputTimer = inputCooldown;
 	}
-	
+
 	if(input.isDown("r") && inputTimer === 0)
 	{
 		inputTimer = inputCooldown;
 		levelRestart();
 		score = 0;
 	}
-	
+
 	if((input.isDown("f") || (useGamepad && buttonX.pressed == true)) && inputTimer === 0)
 	{
 		inputTimer = inputCooldown;
@@ -776,7 +775,7 @@ function handleInput(deltaTime)
 
 function makeAngle(x1,x2,y1,y2)
 {
-	return Math.atan2(y2 - y1,x2 - x1);	
+	return Math.atan2(y2 - y1,x2 - x1);
 }
 
 function random(int)
@@ -786,8 +785,8 @@ function random(int)
 
 function rollDice(N, S)
 {
-    var value = 0;    
-    for(var a = 0; a < N; a++) value += random(S + 1);    
+    var value = 0;
+    for(var a = 0; a < N; a++) value += random(S + 1);
     return value;
 }
 
@@ -798,7 +797,7 @@ function getRandFloatInRange(min, max)
 
 function drawRotatedImg(source, sX, sY, sWidth, sHeight, x, y, width, height, angle)
 {
-	ctx.save();		
+	ctx.save();
 	ctx.translate(x + width/2, y + height/2);
 	ctx.rotate(angle);
 	ctx.drawImage(source, sX, sY, sWidth, sHeight, -(width/2), -(height/2), width, height);
@@ -827,12 +826,12 @@ function renderStrokeColliderPolygon(collider, color, viewX, viewY)
 	ctx.fillStyle = color;
 	ctx.beginPath();
 	ctx.moveTo(collider.calcPoints[0].x + collider.pos.x - viewX, collider.calcPoints[0].y + collider.pos.y - viewY);
-	
+
 	for(var a = 1; a < collider.calcPoints.length; a++)
 	{
 		ctx.lineTo(collider.calcPoints[a].x + collider.pos.x - viewX, collider.calcPoints[a].y + collider.pos.y - viewY);
 	}
-	
+
 	ctx.closePath();
 	ctx.fill();
 }
@@ -858,9 +857,9 @@ function levelRestart()
 
 	//enemies
 	level.wave.enemies = [];
-	
+
 	level.waveDif = 0;
-	
+
 	isFollowing = false;
 	followSearch = false;
 	followEnemy = null;
@@ -870,7 +869,7 @@ function levelRestart()
 
 	//is player alive?
 	player.playerAlive = true;
-	
+
 	//can player control his character?
 	player.playerInput = true;
 
@@ -889,8 +888,8 @@ function pathfindingFunction()
 
 	//creating pathfinding nodes
 	for(var z = 1; z < obstacles.length; z++)
-	{	
-		for(var a = 0; a < nSizeX; a++){			
+	{
+		for(var a = 0; a < nSizeX; a++){
 			for(var b = 0; b < nSizeY; b++){
 				var boxX = a * pathfindingNodesScale;
 				var boxY = b * pathfindingNodesScale;
@@ -916,7 +915,7 @@ function pathfindingFunction()
 					{
                         var pom1 = xx + a;
                         var pom2 = yy + b;
-                        
+
                         if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
                             pathfindingNodes[pom1][pom2] = 2;
                     }
@@ -925,7 +924,7 @@ function pathfindingFunction()
 		}
 	}
 
-	//adding lesser (but higher than normal) values to pathfinding 
+	//adding lesser (but higher than normal) values to pathfinding
 	for(var a = 0; a < nSizeX; a++)
 	{
 		for(var b = 0; b < nSizeY; b++)
@@ -938,7 +937,7 @@ function pathfindingFunction()
 					{
                         var pom1 = xx + a;
                         var pom2 = yy + b;
-                        
+
                         if ((pom1 >= 0) && (pom1 < nSizeX) && (pom2 >= 0) && (pom2 < nSizeY) && pathfindingNodes[pom1][pom2] != 0)
                             pathfindingNodes[pom1][pom2] = 5;
 
@@ -978,8 +977,8 @@ function loadJSON(file, callback) {
 				callback(xobj.responseText);
 			}
 		}
-		
-		xobj.send(null);	
+
+		xobj.send(null);
 	}
 
 //################ CODE NAME: BORDERGUNS ###################
